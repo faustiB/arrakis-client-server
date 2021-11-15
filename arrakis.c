@@ -29,7 +29,7 @@ void RsiControlC(void){
 
   free(configuration.ip);
   free(configuration.directory);
-	//Terminamos el programa enviándonos a nosotros mismos el signal de kill
+	//Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
 	raise(SIGKILL);
 }
 

@@ -1,10 +1,10 @@
-all: practica
+all: fase1
 
-main.o: main.c fremen.h
-	gcc -c main.c -Wall -Wextra
+arrakis.o: arrakis.c fremen.h
+	gcc -c arrakis.c -Wall -Wextra
 
 fremen.o: fremen.c fremen.h
 	gcc -c fremen.c -Wall -Wextra
 
-practica: main.o fremen.o
-	gcc main.o fremen.o -o fremen -Wall -Wextra
+fase1: arrakis.o fremen.o
+	gcc arrakis.o fremen.o -o fremen -Wall -Wextra

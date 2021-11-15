@@ -1,3 +1,5 @@
 Practica SO - 2021-2022 
 
-Arrakis 
+Arrakis
+
+Authors: Guillem Miró, Faozi Bouybaouene
