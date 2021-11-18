@@ -26,11 +26,11 @@ void RsiControlC(void){
 
 /* ********************************************************************
 *
-* @Nombre : fremen_readUntilIntro
+* @Nombre : FREMEN_readUntilIntro
 * @Def : Función para leer hasta un intro.
 *
 ********************************************************************* */
-char *fremen_readUntilIntro(int fd, char caracter, int i) {
+char *FREMEN_readUntilIntro(int fd, char caracter, int i) {
     char *buffer = (char *) malloc(1 * sizeof(char));
 
     while (caracter != '\n' || i == 0) {
@@ -55,11 +55,11 @@ char *fremen_readUntilIntro(int fd, char caracter, int i) {
 
 /* ********************************************************************
 *
-* @Nombre : fremen_fillConfiguration
+* @Nombre : FREMEN_fillConfiguration
 * @Def : Función para leer el fichero de configuración, y devolverlo en nuestro struct.
 *
 ********************************************************************* */
-Config fremen_fillConfiguration(char * argv) {
+Config FREMEN_fillConfiguration(char * argv) {
     char caracter = ' ', *cadena = NULL;
     int i = 0, fd;
     Config c;
@@ -72,21 +72,21 @@ Config fremen_fillConfiguration(char * argv) {
       raise(SIGINT);
 
     } else {
-      cadena = fremen_readUntilIntro(fd, caracter, i);
+      cadena = FREMEN_readUntilIntro(fd, caracter, i);
       c.seconds_to_clean = atoi(cadena);
       free(cadena);
 
-      c.ip = fremen_readUntilIntro(fd, caracter, i);
+      c.ip = FREMEN_readUntilIntro(fd, caracter, i);
 
-      cadena = fremen_readUntilIntro(fd, caracter, i);
+      cadena = FREMEN_readUntilIntro(fd, caracter, i);
       c.port = atoi(cadena);
       free(cadena);
 
-      c.directory = fremen_readUntilIntro(fd, caracter, i);
+      c.directory = FREMEN_readUntilIntro(fd, caracter, i);
       close(fd);
     }
     //Lectura del fichero de configuración y cierre de su file descriptor.
-    //configuration = fremen_fillConfiguration(configuration, fd);
+    //configuration = FREMEN_fillConfiguration(configuration, fd);
 
 
 
@@ -97,12 +97,12 @@ Config fremen_fillConfiguration(char * argv) {
 
 /* ********************************************************************
 *
-* @Nombre : fremen_freeMemory
+* @Nombre : FREMEN_freeMemory
 * @Def : Función para liberar la memoria.
 *
 ********************************************************************* */
 
-void fremen_freeMemory(char * command, char * command_lower, char ** command_array){
+void FREMEN_freeMemory(char * command, char * command_lower, char ** command_array){
   free(command);
   free(command_lower);
   free(command_array);
@@ -111,11 +111,11 @@ void fremen_freeMemory(char * command, char * command_lower, char ** command_arr
 
 /* ********************************************************************
 *
-* @Nombre : fremen_checkNumberOfWords
+* @Nombre : FREMEN_checkNumberOfWords
 * @Def : Función para comprobar el número de parametros para el comando.
 *
 ********************************************************************* */
-int fremen_checkNumberOfWords (char *command, int words) {
+int FREMEN_checkNumberOfWords (char *command, int words) {
 
 	if (strcmp(command, "login") == 0) {
 		if (words == 3) {
@@ -185,18 +185,18 @@ int fremen_checkNumberOfWords (char *command, int words) {
 
 /* ********************************************************************
 *
-* @Nombre : fremen_promptChoice
+* @Nombre : FREMEN_promptChoice
 * @Def : Función para tratar el comando que se introduce
 *
 ********************************************************************* */
-int fremen_promptChoice() {
+int FREMEN_promptChoice() {
     char *command=NULL, *command_lower = NULL;
 	  char *(*command_array);
     int i = 0, num_of_words = 0, isok = 0;
 
     //Lectura por pantalla del comando y tratado para quedarnos con una cadena
 	  printF("$ ");
-    command = fremen_readUntilIntro(STDIN_FILENO, '\n', 0);
+    command = FREMEN_readUntilIntro(STDIN_FILENO, '\n', 0);
 
     //Intro vacío
 	  if (command[0] == '\0') {
@@ -222,24 +222,24 @@ int fremen_promptChoice() {
    	}
 
 	  //Checkeo del número de parametros.
-	  isok = fremen_checkNumberOfWords(command_array[0], num_of_words);
+	  isok = FREMEN_checkNumberOfWords(command_array[0], num_of_words);
     //Comando custom OK
   	if (isok == 0) {
         if (strcmp(command_array[0],"logout") == 0) {
-          fremen_freeMemory(command,command_lower,command_array);
+          FREMEN_freeMemory(command,command_lower,command_array);
           return 3;
         }
-        //FUNCIONALIDADES CUSTOM AQUÍ 
+        //FUNCIONALIDADES CUSTOM AQUÍ
 
 
 
 
 
-        fremen_freeMemory(command,command_lower,command_array);
+        FREMEN_freeMemory(command,command_lower,command_array);
   		  return 1;
     //Comando custom KO, por parametros
   	} else if (isok == 1) {
-      fremen_freeMemory(command,command_lower,command_array);
+      FREMEN_freeMemory(command,command_lower,command_array);
   		  return 0;
 
 	//Cuando el  valor retornado sea 2, se abrirá un fork para ejecutar la comanda contra el sistema
@@ -247,7 +247,7 @@ int fremen_promptChoice() {
 		    pid_t  pid;
         //Creación del fork
      	  if ((pid = fork()) < 0) {
-          fremen_freeMemory(command,command_lower,command_array);
+          FREMEN_freeMemory(command,command_lower,command_array);
           printF("Error al crear el Fork\n");
           exit(1);
      	  }
@@ -256,7 +256,7 @@ int fremen_promptChoice() {
 		else if (pid == 0) {
       //Ejecución del comando +  tratamiento si ha ido mal
       if (execvp(command_array[0], command_array) < 0) {
-        fremen_freeMemory(command,command_lower,command_array);
+        FREMEN_freeMemory(command,command_lower,command_array);
 				printF("Error al executar la comanda!\n");
         exit(1);
 			}
@@ -266,7 +266,7 @@ int fremen_promptChoice() {
           	wait(NULL);
 
             //liberacion de memoria
-            fremen_freeMemory(command,command_lower,command_array);
+            FREMEN_freeMemory(command,command_lower,command_array);
 
      	}
 		return 0;
@@ -294,13 +294,13 @@ int main(int argc, char **argv) {
     //Assignación del signal de CtrlC a nuestra función
     signal(SIGINT, (void*)RsiControlC);
     //Lectura del fichero de configuración y cierre de su file descriptor.
-    configuration = fremen_fillConfiguration(argv[1]);
+    configuration = FREMEN_fillConfiguration(argv[1]);
 
 
     //Inicialización de fremen.
 	  printF("Benvingut a Fremen\n");
     while (command == 0 || command == 1 ) {
-		    command = fremen_promptChoice();
+		    command = FREMEN_promptChoice();
     }
 
     //Exit de fremen con la palabra logout.
