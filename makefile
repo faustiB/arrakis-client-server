@@ -8,3 +8,6 @@ fremen.o: fremen.c fremen.h
 
 fase1: arrakis.o fremen.o
 	gcc arrakis.o fremen.o -o fremen -Wall -Wextra
+
+clean: 
+	rm -f *.o fremen
