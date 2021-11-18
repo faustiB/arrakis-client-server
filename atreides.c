@@ -2,6 +2,7 @@
 
 void RsiControlC(void);
 Config configuration;
+User *users;
 
 /* ********************************************************************
 *
@@ -48,6 +49,23 @@ char *ATREIDES_readUntilIntro(int fd, char caracter, int i) {
     return buffer;
 }
 
+char * ATREIDES_readLine(int fd, char delimiter){
+
+	 char * msg = malloc(1);
+	 char current;
+	 int i = 0;
+	 int len = 0;
+	 while ((len += read(fs, &current, 1)) > 0){
+
+		 msg[i] = current;
+		 msg = (char *) realloc(msg, ++i + 1);
+		 if (current = delimiter) break;
+	 }
+	 msg[i-1] = '\0';
+
+	 return msg;
+ }
+
 /* ********************************************************************
 *
 * @Nombre : ATREIDES_fillConfiguration
@@ -82,6 +100,45 @@ Config ATREIDES_fillConfiguration(char * argv) {
 
 /* ********************************************************************
 *
+* @Nombre : ATREIDES_fillUsers
+* @Def : Función para leer el fichero de usuarios, y devolverlo en nuestro struct.
+*
+********************************************************************* */
+Config ATREIDES_fillConfiguration() {
+    char caracter = ' ', *cadena = NULL;
+    int i = 0, fd;
+
+    User *u;
+
+    //Apertura del fichero
+    fd = open("Atreides/users_memory.txt", O_RDONLY);
+
+    if (fd < 0 ) {
+      printF("Fitxer de configuració erroni\n");
+      raise(SIGINT);
+    } else {
+
+        u = (User *) malloc(sizeof(User));
+
+        while (noseque) {
+
+            u = (User *) realloc(*u, (i+1) * sizeof(User)); //???
+
+            cadena = ATREIDES_readLine(fd, " ");
+            u.id = atoi(cadena);
+
+
+        }
+        //free(cadena);
+
+        close(fd);
+    }
+
+    return u;
+}
+
+/* ********************************************************************
+*
 * @Nombre : Main
 * @Def : Función principal.
 *
@@ -99,6 +156,9 @@ int main(int argc, char **argv) {
 
     //Lectura del fichero de configuración y cierre de su file descriptor.
     configuration = ATREIDES_fillConfiguration(argv[1]);
+
+    //Carga de usuarios en el struct
+    users = ATREIDES_fillUsers();
 
     raise(SIGINT);
 
