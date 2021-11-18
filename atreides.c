@@ -74,6 +74,7 @@ Config ATREIDES_fillConfiguration(char * argv) {
 
         c.directory = ATREIDES_readUntilIntro(fd, caracter, i);
         close(fd);
+        printF("Llegit el fitxer de configuració\n");
     }
 
     return c;
