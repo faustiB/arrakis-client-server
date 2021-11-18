@@ -17,11 +17,10 @@ void RsiControlC(void){
   free(configuration.ip);
   free(configuration.directory);
 	//Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
-	raise(SIGKILL);
+
+  signal(SIGINT, SIG_DFL);
+  raise(SIGINT);
 }
-
-
-
 
 
 
@@ -60,21 +59,37 @@ char *fremen_readUntilIntro(int fd, char caracter, int i) {
 * @Def : Función para leer el fichero de configuración, y devolverlo en nuestro struct.
 *
 ********************************************************************* */
-Config fremen_fillConfiguration(Config c, int fd) {
+Config fremen_fillConfiguration(char * argv) {
     char caracter = ' ', *cadena = NULL;
-    int i = 0;
+    int i = 0, fd;
+    Config c;
 
-    cadena = fremen_readUntilIntro(fd, caracter, i);
-    c.seconds_to_clean = atoi(cadena);
-    free(cadena);
+    //Apertura del fichero
+    fd = open(argv, O_RDONLY);
 
-    c.ip = fremen_readUntilIntro(fd, caracter, i);
+    if (fd < 0 ) {
+      printF("Fitxer de configuració erroni\n");
+      raise(SIGINT);
 
-    cadena = fremen_readUntilIntro(fd, caracter, i);
-    c.port = atoi(cadena);
-    free(cadena);
+    } else {
+      cadena = fremen_readUntilIntro(fd, caracter, i);
+      c.seconds_to_clean = atoi(cadena);
+      free(cadena);
 
-    c.directory = fremen_readUntilIntro(fd, caracter, i);
+      c.ip = fremen_readUntilIntro(fd, caracter, i);
+
+      cadena = fremen_readUntilIntro(fd, caracter, i);
+      c.port = atoi(cadena);
+      free(cadena);
+
+      c.directory = fremen_readUntilIntro(fd, caracter, i);
+      close(fd);
+    }
+    //Lectura del fichero de configuración y cierre de su file descriptor.
+    //configuration = fremen_fillConfiguration(configuration, fd);
+
+
+
 
     return c;
 }
@@ -214,23 +229,22 @@ int fremen_promptChoice() {
           fremen_freeMemory(command,command_lower,command_array);
           return 3;
         }
+        //FUNCIONALIDADES CUSTOM AQUÍ 
+
+
+
+
+
         fremen_freeMemory(command,command_lower,command_array);
-        // free(command);
-        // free(command_lower);
-        // free(command_array);
   		  return 1;
     //Comando custom KO, por parametros
   	} else if (isok == 1) {
-      // free(command);
-      // free(command_lower);
-      // free(command_array);
       fremen_freeMemory(command,command_lower,command_array);
   		  return 0;
 
 	//Cuando el  valor retornado sea 2, se abrirá un fork para ejecutar la comanda contra el sistema
 		} else {
 		    pid_t  pid;
-        int status;
         //Creación del fork
      	  if ((pid = fork()) < 0) {
           fremen_freeMemory(command,command_lower,command_array);
@@ -249,11 +263,11 @@ int fremen_promptChoice() {
       //Código del padre
     } else {
             //Espera a la ejecución del comando.
-          	while (wait(&status) != pid);
+          	wait(NULL);
 
             //liberacion de memoria
-
             fremen_freeMemory(command,command_lower,command_array);
+
      	}
 		return 0;
 	}
@@ -269,24 +283,18 @@ int fremen_promptChoice() {
 ********************************************************************* */
 int main(int argc, char **argv) {
 
-    int fd, command = 0;
+    int command = 0;
 
     //Check de argumentos de entrada
     if (argc != 2) {
 		printF("Error, falta el nom de fitxer de configuracio.\n");
         return -1;
     }
-    //Apertura del fichero
-    fd = open(argv[1], O_RDONLY, 0666);
-
-    //Lectura del fichero de configuración y cierre de su file descriptor.
-    configuration = fremen_fillConfiguration(configuration, fd);
-    close(fd);
 
     //Assignación del signal de CtrlC a nuestra función
     signal(SIGINT, (void*)RsiControlC);
-
-
+    //Lectura del fichero de configuración y cierre de su file descriptor.
+    configuration = fremen_fillConfiguration(argv[1]);
 
 
     //Inicialización de fremen.

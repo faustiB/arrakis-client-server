@@ -1,5 +1,5 @@
-#ifndef FREMEN_FREMEN_H
-#define FREMEN_FREMEN_H
+#ifndef _FREMEN_H
+#define _FREMEN_H
 #define _GNU_SOURCE
 
 
@@ -28,4 +28,4 @@ Config fillConfiguration (Config c, int fd);
 int promptChoice ();
 int checkNumberOfWords (char *command, int words);
 
-#endif //FREMEN_FREMEN_H
+#endif //_FREMEN_H
