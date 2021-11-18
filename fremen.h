@@ -1,6 +1,8 @@
 #ifndef FREMEN_FREMEN_H
 #define FREMEN_FREMEN_H
 #define _GNU_SOURCE
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +10,10 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <sys/wait.h>
+#include <signal.h>
+
+//Define
+#define printF(x) write(1, x, strlen(x))
 
 typedef struct {
     int seconds_to_clean;
