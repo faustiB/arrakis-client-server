@@ -22,7 +22,8 @@ typedef struct {
 
 typedef struct {
     int id;
-    char *username;
+    //char *username;
+    char username[20];
     int postal_code;
 } User;
 
