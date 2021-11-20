@@ -137,7 +137,7 @@ Config ATREIDES_fillConfiguration(char * argv) {
 *
 ********************************************************************* */
 int ATREIDES_fillUsers(User ** users) {
-    char * buffer,* buffer2;
+    char * buffer;
     int  fd ,i = 0, aux, bytes;
 		//,
     //User *users;
@@ -152,34 +152,27 @@ int ATREIDES_fillUsers(User ** users) {
 				*users = (User *) malloc(sizeof(User));
         do {
 
-							buffer = ATREIDES_read_until(fd, '-');
-							(*users)[i].id  = atoi(buffer);
-							if ((*users)[i].id == 0) {
-								break;
-							}
-							bytes = read(fd,&aux, sizeof(char));
+            buffer = ATREIDES_read_until(fd, '-');
+            (*users)[i].id  = atoi(buffer);
+            if ((*users)[i].id == 0) {
+                break;
+            }
+            
+            bytes = read(fd,&aux, sizeof(char));
 
+            strcpy((*users)[i].username,ATREIDES_read_until(fd,'-'));
+            bytes = read(fd,&aux, sizeof(char));
 
-							strcpy((*users)[i].username,ATREIDES_read_until(fd,'-'));
+            strcpy((*users)[i].postal_code, ATREIDES_read_until(fd,'\n'));
 
-							//bytes = read(fd,&aux, sizeof(char));
+            printf("%d\n",(*users)[i].id );
+            printf("%s\n",(*users)[i].username );
+            printf("%s\n",(*users)[i].postal_code );
 
-							buffer2 = ATREIDES_read_until(fd,'\n');
-							(*users)[i].postal_code = atoi(buffer2);
+            *users = (User *) realloc(*users, (i+1) * sizeof(User));
 
-							printf("%d\n",(*users)[i].id );
-							printf("%s\n",(*users)[i].username );
-							printf("%d\n",(*users)[i].postal_code );
-
-							*users = (User *) realloc(*users, (i+1) * sizeof(User));
-
-
-							i++;
-							free(buffer);
-							free(buffer2);
-
-
-
+            i++;
+            free(buffer);
         } while(bytes > 0);
 
         close(fd);
@@ -195,9 +188,9 @@ int ATREIDES_fillUsers(User ** users) {
 *
 ********************************************************************* */
 int main(int argc, char **argv) {
-		int res;
+    int res;
+    User * users;
 
-		User * users;
     //Check de argumentos de entrada
     if (argc != 2) {
 		printF("Error, falta el nom de fitxer de configuracio.\n");
@@ -213,9 +206,9 @@ int main(int argc, char **argv) {
     //Carga de usuarios en el struct
     res = ATREIDES_fillUsers(&users);
 
-		if (res == 0 ) {
-			printF("Lllegit fitxer de usuaris\n");
-		}
+    if (res == 0 ) {
+        printF("Llegit fitxer de usuaris\n");
+    }
 
     raise(SIGINT);
 
