@@ -1,7 +1,9 @@
 #include "atreides.h"
 
 void RsiControlC(void);
+
 Config configuration;
+int num_users;
 User *users;
 
 /* ********************************************************************
@@ -16,6 +18,12 @@ void RsiControlC(void){
 
     free(configuration.ip);
     free(configuration.directory);
+
+		for(int i = 0; i < num_users; i++){
+			free(users[i].username);
+			free(users[i].postal_code);
+		}
+		free(users);
 
     //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
     signal(SIGINT, SIG_DFL);
@@ -51,11 +59,11 @@ char *ATREIDES_readUntilIntro(int fd, char caracter, int i) {
 
 /* ********************************************************************
 *
-* @Nombre : ATREIDES_readLine
+* @Nombre : ATREIDES_readDelimiter
 * @Def : Función para leer una linea
 *
 ********************************************************************* */
-char * ATREIDES_readLine(int fd, char delimiter){
+char * ATREIDES_readDelimiter(int fd, char delimiter){
 
 	 char * msg = malloc(1);
 	 char current;
@@ -136,12 +144,10 @@ Config ATREIDES_fillConfiguration(char * argv) {
 * @Def : Función para leer el fichero de usuarios, y devolverlo en nuestro struct.
 *
 ********************************************************************* */
-int ATREIDES_fillUsers(User ** users) {
-    char * buffer;
-    int  fd ,i = 0, aux, bytes;
-		//,
-    //User *users;
-
+User * ATREIDES_fillUsers() {
+    char  caracter=' ',* buffer;
+    int  fd ,i = 0, aux;//, num_users;
+		User * users_read;
     //Apertura del fichero
     fd = open("Atreides/users_memory.txt", O_RDONLY);
 
@@ -149,36 +155,35 @@ int ATREIDES_fillUsers(User ** users) {
       printF("Fitxer de usuaris erroni\n");
       raise(SIGINT);
     } else {
-				*users = (User *) malloc(sizeof(User));
-        do {
 
-            buffer = ATREIDES_read_until(fd, '-');
-            (*users)[i].id  = atoi(buffer);
-            if ((*users)[i].id == 0) {
-                break;
-            }
-            
-            bytes = read(fd,&aux, sizeof(char));
+				buffer = ATREIDES_readUntilIntro(fd, caracter, i);
+				num_users = atoi(buffer);
+				users_read	= (User *) malloc(sizeof(User) * num_users);
+				free(buffer);
 
-            strcpy((*users)[i].username,ATREIDES_read_until(fd,'-'));
-            bytes = read(fd,&aux, sizeof(char));
+				i = 0 ;
+				while (i < num_users) {
 
-            strcpy((*users)[i].postal_code, ATREIDES_read_until(fd,'\n'));
+					buffer = NULL;
+					buffer = ATREIDES_read_until(fd, '-');
+					users_read[i].id = atoi(buffer);
 
-            printf("%d\n",(*users)[i].id );
-            printf("%s\n",(*users)[i].username );
-            printf("%s\n",(*users)[i].postal_code );
+					read(fd,&aux, sizeof(char));
+					users_read[i].username = ATREIDES_read_until(fd, '-');
 
-            *users = (User *) realloc(*users, (i+1) * sizeof(User));
+					read(fd,&aux, sizeof(char));
+					users_read[i].postal_code = ATREIDES_read_until(fd, '\n');
+					
 
-            i++;
-            free(buffer);
-        } while(bytes > 0);
+
+					free(buffer);
+					i++;
+				}
 
         close(fd);
     }
 
-    return 0;
+    return users_read;
 }
 
 /* ********************************************************************
@@ -188,8 +193,7 @@ int ATREIDES_fillUsers(User ** users) {
 *
 ********************************************************************* */
 int main(int argc, char **argv) {
-    int res;
-    User * users;
+
 
     //Check de argumentos de entrada
     if (argc != 2) {
@@ -204,9 +208,10 @@ int main(int argc, char **argv) {
     configuration = ATREIDES_fillConfiguration(argv[1]);
 
     //Carga de usuarios en el struct
-    res = ATREIDES_fillUsers(&users);
+    users = ATREIDES_fillUsers();
 
-    if (res == 0 ) {
+
+    if (num_users > 0 ) {
         printF("Llegit fitxer de usuaris\n");
     }
 
