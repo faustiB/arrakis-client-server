@@ -229,26 +229,22 @@ void FREMEN_login(Config configuration,char * command, char * command_lower, cha
 	}
 }
 
-char * FREMEN_generateFrame(char * type, char * name, char * zipCode) {
-    char *trama = NULL;
+void FREMEN_generateFrame(char * type, char * name, char * zipCode) {
+    char trama[256];
     int i;
 
-    printF("Before malloc\n");
-    trama = (char *) malloc (sizeof(char*) * 256);
-    printF("After malloc\n");
+    for (i = 0; i < 256; i++) {
+        trama[i] = '\0';
+    }
 
-    strcat(trama, "FREMEN");
+    sprintf(trama, "FREMEN");
 
-    printF("First for\n");
     for (i = 0; i < 15; i++) {
         if (trama[i] < 65 || trama[i] > 122) {
             trama[i] = '\0';
         }
-        printf("%c\n", trama[i]);
     }
-    printf("----%ld\n", strlen(trama));
 
-    printF("Strcats\n");
     strcat(trama, type);
     strcat(trama, "<");
     strcat(trama, name);
@@ -256,20 +252,13 @@ char * FREMEN_generateFrame(char * type, char * name, char * zipCode) {
     strcat(trama, zipCode);
     strcat(trama, ">");
 
-    printf("%ld\n", strlen(trama));
-
-    printF("Second for\n");
     for (i = strlen(trama); i < 256; i++) {
         if (trama[i] < 65 || trama[i] > 122) {
             trama[i] = '\0';
         }
     }
-    
-    printf("%ld\n", strlen(trama));
 
     printf("%s\n", trama);
-
-    return trama;
 }
 
 /* ********************************************************************
@@ -292,7 +281,6 @@ int FREMEN_promptChoice(Config configuration) {
         free(command);
         return 0;
     }
-
 
     //Tratamiento pasar cadena a minúscula
     command_lower = strdup(command);
