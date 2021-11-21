@@ -2,6 +2,7 @@
 
 void RsiControlC(void);
 Config configuration;
+int socket_fd;
 
 /* ********************************************************************
 *
@@ -17,6 +18,7 @@ void RsiControlC(void){
     free(configuration.ip);
     free(configuration.directory);
 
+		close(socket_fd);
     //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
     signal(SIGINT, SIG_DFL);
     raise(SIGINT);
@@ -113,7 +115,7 @@ int FREMEN_checkNumberOfWords (char *command, int words) {
 
 	if (strcmp(command, "login") == 0) {
 		if (words == 3) {
-			printF("Comanda OK.\n");
+			//printF("Comanda OK.\n");
 			return 0;
 		} else if (words < 3) {
 			printF("Comanda KO. Falta paràmetres\n");
@@ -125,7 +127,7 @@ int FREMEN_checkNumberOfWords (char *command, int words) {
 
 	else if (strcmp(command, "search") == 0) {
 		if (words == 2) {
-			printF("Comanda OK.\n");
+			//printF("Comanda OK.\n");
 			return 0;
 		} else if (words < 2) {
 			printF("Comanda KO. Falta paràmetres\n");
@@ -137,7 +139,7 @@ int FREMEN_checkNumberOfWords (char *command, int words) {
 
 	else if (strcmp(command, "send") == 0) {
 		if (words == 2) {
-			printF("Comanda OK.\n");
+			//printF("Comanda OK.\n");
 			return 0;
 		} else if (words < 2) {
 			printF("Comanda KO. Falta paràmetres\n");
@@ -149,7 +151,7 @@ int FREMEN_checkNumberOfWords (char *command, int words) {
 
 	else if (strcmp(command, "photo") == 0) {
 		if (words == 2) {
-			printF("Comanda OK.\n");
+			//printF("Comanda OK.\n");
 			return 0;
 		} else if (words < 2) {
 			printF("Comanda KO. Falta paràmetres\n");
@@ -175,7 +177,57 @@ int FREMEN_checkNumberOfWords (char *command, int words) {
 	return 2;
 }
 
+/* ********************************************************************
+ *
+ * @Nombre : configSocket
+ * @Def : Preparación conexión atreides.
+ *
+ ********************************************************************* */
 
+int configSocket(Config config,char * command, char * command_lower, char ** command_array){
+
+    struct sockaddr_in s_addr;
+    int socket_fd;
+
+    socket_fd = socket(AF_INET,SOCK_STREAM, 0);
+    if(socket_fd < 0){
+        printF("ERROR: crear socket del cliente\n");
+        exit(-1);
+    }
+
+    memset(&s_addr, 0, sizeof(s_addr));
+    s_addr.sin_family = AF_INET;
+    s_addr.sin_port = htons(config.port);
+    s_addr.sin_addr.s_addr = inet_addr(config.ip);
+
+    if (connect(socket_fd, (void *)&s_addr, sizeof(s_addr)) < 0){
+        printF("ERROR: connect del cliente\n");
+        close(socket_fd);
+				FREMEN_freeMemory(command,command_lower,command_array);
+        raise(SIGINT);
+    }
+
+    return socket_fd;
+}
+
+
+
+
+/* ********************************************************************
+*
+* @Nombre : FREMEN_login
+* @Def : función de login
+*
+********************************************************************* */
+
+
+void FREMEN_login(Config configuration,char * command, char * command_lower, char ** command_array){
+	socket_fd = configSocket(configuration,command,command_lower,command_array);
+	if (socket_fd < 1) {
+			printF("ERROR: no se ha podido conectar el socket\n");
+			raise(SIGINT);
+	}
+}
 
 /* ********************************************************************
 *
@@ -183,7 +235,7 @@ int FREMEN_checkNumberOfWords (char *command, int words) {
 * @Def : Función para tratar el comando que se introduce
 *
 ********************************************************************* */
-int FREMEN_promptChoice() {
+int FREMEN_promptChoice(Config configuration) {
     char *command=NULL, *command_lower = NULL;
     char *(*command_array);
     int i = 0, num_of_words = 0, isok = 0;
@@ -223,8 +275,28 @@ int FREMEN_promptChoice() {
         if (strcmp(command_array[0],"logout") == 0) {
           FREMEN_freeMemory(command,command_lower,command_array);
           return 3;
+
+        } else if (strcmp(command_array[0],"login") == 0) {
+
+					FREMEN_login(configuration,command,command_lower,command_array);
+
+
+					printF("Conectado al servidor\n");
+
+        } else if (strcmp(command_array[0],"search") == 0) {
+
+					//FREMEN_search();
+
+        } else if (strcmp(command_array[0],"send") == 0) {
+
+
+        } else if (strcmp(command_array[0],"photo") == 0) {
+
+
         }
-        //FUNCIONALIDADES CUSTOM AQUÍ
+
+
+
 
         FREMEN_freeMemory(command,command_lower,command_array);
         return 1;
@@ -264,7 +336,6 @@ int FREMEN_promptChoice() {
 }
 
 
-
 /* ********************************************************************
 *
 * @Nombre : Main
@@ -290,7 +361,7 @@ int main(int argc, char **argv) {
     //Inicialización de fremen.
     printF("Benvingut a Fremen\n");
     while (command == 0 || command == 1 ) {
-        command = FREMEN_promptChoice();
+        command = FREMEN_promptChoice(configuration);
     }
 
     //Exit de fremen con la palabra logout.

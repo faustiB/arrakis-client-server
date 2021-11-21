@@ -3,7 +3,7 @@
 void RsiControlC(void);
 
 Config configuration;
-int num_users;
+int num_users, socket_fd;;
 User *users;
 
 /* ********************************************************************
@@ -24,6 +24,9 @@ void RsiControlC(void){
 			free(users[i].postal_code);
 		}
 		free(users);
+
+
+		close(socket_fd);
 
     //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
     signal(SIGINT, SIG_DFL);
@@ -146,7 +149,7 @@ Config ATREIDES_fillConfiguration(char * argv) {
 ********************************************************************* */
 User * ATREIDES_fillUsers() {
     char  caracter=' ',* buffer;
-    int  fd ,i = 0, aux;//, num_users;
+    int  fd ,i = 0;
 		User * users_read;
     //Apertura del fichero
     fd = open("Atreides/users_memory.txt", O_RDONLY);
@@ -168,22 +171,81 @@ User * ATREIDES_fillUsers() {
 					buffer = ATREIDES_read_until(fd, '-');
 					users_read[i].id = atoi(buffer);
 
-					read(fd,&aux, sizeof(char));
 					users_read[i].username = ATREIDES_read_until(fd, '-');
 
-					read(fd,&aux, sizeof(char));
 					users_read[i].postal_code = ATREIDES_read_until(fd, '\n');
-					
 
 
 					free(buffer);
 					i++;
 				}
 
+
+		    printF("Llegit fitxer de usuaris\n");
         close(fd);
     }
 
     return users_read;
+}
+
+
+/* ********************************************************************
+ *
+ * @Nombre : configSocket
+ * @Def : Extrae los datos del fichero config y prepara el socket
+ * @Arg : Out: el fd de la nueva conexion
+ *
+ ********************************************************************* */
+
+int configSocket(Config config){
+
+    struct sockaddr_in s_addr, cliente_addr;
+    int fdSocket = -1;
+
+
+    fdSocket = socket(AF_INET,SOCK_STREAM, 0);
+    if(fdSocket<0){
+        printF("ERROR: creacion de socket\n");
+        return -1;
+    }
+
+    memset(&s_addr, 0, sizeof(s_addr));
+    s_addr.sin_family=AF_INET;
+    s_addr.sin_port=htons(config.port);
+    s_addr.sin_addr.s_addr =inet_addr(config.ip);
+
+    if(bind(fdSocket, (void *)&s_addr, sizeof(s_addr))<0){
+        printF("ERROR: bind\n");
+        return -1;
+    }
+
+    listen(fdSocket,3);
+    socklen_t cliente_len = sizeof(cliente_addr);
+
+    printF("Esperando nueva conexion... \n");
+    int nuevo_sock_fd = accept(fdSocket, (void *)&cliente_addr, &cliente_len);
+    if(nuevo_sock_fd < 0){
+        printF("Error accept\n");
+        return -1;
+    }
+
+    printF("Nueva conexion... \n");
+    return nuevo_sock_fd;
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : checkTrama
+ * @Def : Comprueba si existe el nombre
+ * @Arg : In : nombre a buscar
+ *        Out: un boleano que declara si se
+ *             ha encontrado una coincidencia
+ *
+ ********************************************************************* */
+
+int checkTrama(){
+    
+    return -1;
 }
 
 /* ********************************************************************
@@ -210,10 +272,46 @@ int main(int argc, char **argv) {
     //Carga de usuarios en el struct
     users = ATREIDES_fillUsers();
 
-
-    if (num_users > 0 ) {
-        printF("Llegit fitxer de usuaris\n");
+		socket_fd = configSocket(configuration);
+    if (socket_fd < 1) {
+        printF("ERROR: imposible preparar el socket\n");
+				close(socket_fd);
+        raise(SIGINT);
     }
+
+		/*while (!final) {
+
+        aux = '\n';
+        count = 0;
+        name = malloc(sizeof(char));
+
+        while (aux != '\0') {
+            res = read(fd, &aux, sizeof(char));
+            name[count] = aux;
+            count++;
+            name = realloc(name, sizeof(char)*(count+1));
+        }
+        name[count] = '\0';
+
+        print("Comprobando nombre...\n");
+        res = checkName(name, data, num);
+
+        if (res > 0) {
+            result = 1;
+            write(fd, &result, sizeof(int));
+        }else if(res == 0){
+            close(fd);
+            print("\n\nCerrando conexion...\n\n");
+            final = 1;
+        }else{
+            result = 0;
+            write(fd, &result, sizeof(int));
+        }
+
+    }*/
+
+
+
 
     raise(SIGINT);
 

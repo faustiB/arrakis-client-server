@@ -11,6 +11,12 @@
 #include <ctype.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+
 
 #define printF(x) write(1, x, strlen(x))
 
@@ -25,5 +31,13 @@ typedef struct {
     char *username;
     char *postal_code;
 } User;
+
+typedef struct {
+    char origen[15];
+    char tipus;
+    char data[240];
+} Trama;
+
+
 
 #endif //_ATREIDES_H
