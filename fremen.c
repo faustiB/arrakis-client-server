@@ -192,7 +192,8 @@ int configSocket(Config config,char * command, char * command_lower, char ** com
     socket_fd = socket(AF_INET,SOCK_STREAM, 0);
     if(socket_fd < 0){
         printF("ERROR: crear socket del cliente\n");
-        exit(-1);
+				FREMEN_freeMemory(command,command_lower,command_array);
+        raise(SIGINT);
     }
 
     memset(&s_addr, 0, sizeof(s_addr));
