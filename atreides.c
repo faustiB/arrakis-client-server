@@ -150,7 +150,12 @@ Config ATREIDES_fillConfiguration(char * argv) {
 User * ATREIDES_fillUsers() {
     char  caracter=' ',* buffer;
     int  fd ,i = 0;
-		User * users_read;
+	User * users_read;
+
+	//
+	// Leer de fichero de config
+	//
+
     //Apertura del fichero
     fd = open("Atreides/users_memory.txt", O_RDONLY);
 
@@ -272,10 +277,11 @@ int main(int argc, char **argv) {
     //Carga de usuarios en el struct
     users = ATREIDES_fillUsers();
 
-		socket_fd = configSocket(configuration);
-    if (socket_fd < 1) {
+	socket_fd = configSocket(configuration);
+    
+	if (socket_fd < 1) {
         printF("ERROR: imposible preparar el socket\n");
-				close(socket_fd);
+		close(socket_fd);
         raise(SIGINT);
     }
 
@@ -309,7 +315,6 @@ int main(int argc, char **argv) {
         }
 
     }*/
-
 
 
 

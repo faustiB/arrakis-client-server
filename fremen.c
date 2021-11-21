@@ -49,10 +49,7 @@ char *FREMEN_readUntilIntro(int fd, char caracter, int i) {
 
     return buffer;
 }
-
-
-
-
+ 
 /* ********************************************************************
 *
 * @Nombre : FREMEN_fillConfiguration
@@ -192,7 +189,7 @@ int configSocket(Config config,char * command, char * command_lower, char ** com
     socket_fd = socket(AF_INET,SOCK_STREAM, 0);
     if(socket_fd < 0){
         printF("ERROR: crear socket del cliente\n");
-				FREMEN_freeMemory(command,command_lower,command_array);
+        FREMEN_freeMemory(command,command_lower,command_array);
         raise(SIGINT);
     }
 
@@ -201,10 +198,12 @@ int configSocket(Config config,char * command, char * command_lower, char ** com
     s_addr.sin_port = htons(config.port);
     s_addr.sin_addr.s_addr = inet_addr(config.ip);
 
+    printf("Port: %d IP: %s\n", config.port, config.ip);
+
     if (connect(socket_fd, (void *)&s_addr, sizeof(s_addr)) < 0){
         printF("ERROR: connect del cliente\n");
         close(socket_fd);
-				FREMEN_freeMemory(command,command_lower,command_array);
+        FREMEN_freeMemory(command,command_lower,command_array);
         raise(SIGINT);
     }
 
@@ -228,6 +227,49 @@ void FREMEN_login(Config configuration,char * command, char * command_lower, cha
 			printF("ERROR: no se ha podido conectar el socket\n");
 			raise(SIGINT);
 	}
+}
+
+char * FREMEN_generateFrame(char * type, char * name, char * zipCode) {
+    char *trama = NULL;
+    int i;
+
+    printF("Before malloc\n");
+    trama = (char *) malloc (sizeof(char*) * 256);
+    printF("After malloc\n");
+
+    strcat(trama, "FREMEN");
+
+    printF("First for\n");
+    for (i = 0; i < 15; i++) {
+        if (trama[i] < 65 || trama[i] > 122) {
+            trama[i] = '\0';
+        }
+        printf("%c\n", trama[i]);
+    }
+    printf("----%ld\n", strlen(trama));
+
+    printF("Strcats\n");
+    strcat(trama, type);
+    strcat(trama, "<");
+    strcat(trama, name);
+    strcat(trama, ">*<");
+    strcat(trama, zipCode);
+    strcat(trama, ">");
+
+    printf("%ld\n", strlen(trama));
+
+    printF("Second for\n");
+    for (i = strlen(trama); i < 256; i++) {
+        if (trama[i] < 65 || trama[i] > 122) {
+            trama[i] = '\0';
+        }
+    }
+    
+    printf("%ld\n", strlen(trama));
+
+    printf("%s\n", trama);
+
+    return trama;
 }
 
 /* ********************************************************************
@@ -278,11 +320,9 @@ int FREMEN_promptChoice(Config configuration) {
           return 3;
 
         } else if (strcmp(command_array[0],"login") == 0) {
-
-					FREMEN_login(configuration,command,command_lower,command_array);
-
-
-					printF("Conectado al servidor\n");
+            FREMEN_login(configuration,command,command_lower,command_array);
+            FREMEN_generateFrame("C", command_array[1], command_array[2]);
+            printF("Conectado al servidor\n");
 
         } else if (strcmp(command_array[0],"search") == 0) {
 
@@ -295,9 +335,6 @@ int FREMEN_promptChoice(Config configuration) {
 
 
         }
-
-
-
 
         FREMEN_freeMemory(command,command_lower,command_array);
         return 1;
