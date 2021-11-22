@@ -198,8 +198,6 @@ int configSocket(Config config,char * command, char * command_lower, char ** com
     s_addr.sin_port = htons(config.port);
     s_addr.sin_addr.s_addr = inet_addr(config.ip);
 
-    printf("Port: %d IP: %s\n", config.port, config.ip);
-
     if (connect(socket_fd, (void *)&s_addr, sizeof(s_addr)) < 0){
         printF("ERROR: connect del cliente\n");
         close(socket_fd);
@@ -229,36 +227,43 @@ void FREMEN_login(Config configuration,char * command, char * command_lower, cha
 	}
 }
 
-void FREMEN_generateFrame(char * type, char * name, char * zipCode) {
-    char trama[256];
+void FREMEN_sendFrame(int fd, char * frame) {
+    write(fd, frame, strlen(frame));
+}
+
+char * FREMEN_generateFrame(char * type, char * name, char * zipCode) {
+    char *frame = NULL;
     int i;
 
+    frame = (char *) malloc (sizeof(char) * 256);
+
     for (i = 0; i < 256; i++) {
-        trama[i] = '\0';
+        frame[i] = '\0';
     }
 
-    sprintf(trama, "FREMEN");
+    sprintf(frame, "FREMEN");
 
     for (i = 0; i < 15; i++) {
-        if (trama[i] < 65 || trama[i] > 122) {
-            trama[i] = '\0';
+        if (frame[i] < 65 || frame[i] > 122) {
+            frame[i] = '\0';
         }
     }
 
-    strcat(trama, type);
-    strcat(trama, "<");
-    strcat(trama, name);
-    strcat(trama, ">*<");
-    strcat(trama, zipCode);
-    strcat(trama, ">");
+    strcat(frame, type);
+    strcat(frame, "<");
+    strcat(frame, name);
+    strcat(frame, ">*<");
+    strcat(frame, zipCode);
+    strcat(frame, ">");
 
-    for (i = strlen(trama); i < 256; i++) {
-        if (trama[i] < 65 || trama[i] > 122) {
-            trama[i] = '\0';
+    for (i = strlen(frame); i < 256; i++) {
+        if (frame[i] < 65 || frame[i] > 122) {
+            frame[i] = '\0';
         }
     }
 
-    printf("%s\n", trama);
+
+    return frame;
 }
 
 /* ********************************************************************
@@ -268,7 +273,7 @@ void FREMEN_generateFrame(char * type, char * name, char * zipCode) {
 *
 ********************************************************************* */
 int FREMEN_promptChoice(Config configuration) {
-    char *command=NULL, *command_lower = NULL;
+    char *command=NULL, *command_lower = NULL, *frame = NULL;
     char *(*command_array);
     int i = 0, num_of_words = 0, isok = 0;
 
@@ -304,13 +309,22 @@ int FREMEN_promptChoice(Config configuration) {
     //Comando custom OK
   	if (isok == 0) {
         if (strcmp(command_array[0],"logout") == 0) {
-          FREMEN_freeMemory(command,command_lower,command_array);
-          return 3;
+            frame = FREMEN_generateFrame("Q", command_array[1], command_array[2]);
+            FREMEN_freeMemory(command,command_lower,command_array);
+            free(frame);
+            return 3;
 
         } else if (strcmp(command_array[0],"login") == 0) {
             FREMEN_login(configuration,command,command_lower,command_array);
-            FREMEN_generateFrame("C", command_array[1], command_array[2]);
+            frame = FREMEN_generateFrame("C", command_array[1], command_array[2]);
+            FREMEN_sendFrame(socket_fd, frame);
+            printf("%s\n", frame);
             printF("Conectado al servidor\n");
+
+            //Al rebre el ID des de atreides, hem de guardar com a variable global el nom i el ID, ja que
+            //ho necessitem per totes les altres opcions de fremen.
+
+            free(frame);
 
         } else if (strcmp(command_array[0],"search") == 0) {
 

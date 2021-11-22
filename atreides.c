@@ -25,7 +25,6 @@ void RsiControlC(void){
 		}
 		free(users);
 
-
 		close(socket_fd);
 
     //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
