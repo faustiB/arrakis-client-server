@@ -231,37 +231,41 @@ void FREMEN_sendFrame(int fd, char * frame) {
     write(fd, frame, strlen(frame));
 }
 
-char * FREMEN_generateFrame(char * type, char * name, char * zipCode) {
-    char *frame = NULL;
-    int i;
-
+/* ********************************************************************
+*
+* @Nombre : FREMEN_generateFrameLogin
+* @Def : ceación y generación de la tramapara login. 
+*
+********************************************************************* */
+char * FREMEN_generateFrameLogin( char * type, char * name, char * zipCode) {
+    char * frame ;
+    int i = 0;
+    
     frame = (char *) malloc (sizeof(char) * 256);
-
+    
     for (i = 0; i < 256; i++) {
         frame[i] = '\0';
     }
+    
 
+    
     sprintf(frame, "FREMEN");
-
-    for (i = 0; i < 15; i++) {
-        if (frame[i] < 65 || frame[i] > 122) {
-            frame[i] = '\0';
-        }
+    
+    for (i = strlen(frame); i < 15; i++) {
+        frame[i] = '\0';
     }
-
+    
     strcat(frame, type);
     strcat(frame, "<");
+    
     strcat(frame, name);
     strcat(frame, ">*<");
     strcat(frame, zipCode);
     strcat(frame, ">");
-
+    
     for (i = strlen(frame); i < 256; i++) {
-        if (frame[i] < 65 || frame[i] > 122) {
-            frame[i] = '\0';
-        }
+        frame[i] = '\0';
     }
-
 
     return frame;
 }
@@ -309,15 +313,24 @@ int FREMEN_promptChoice(Config configuration) {
     //Comando custom OK
   	if (isok == 0) {
         if (strcmp(command_array[0],"logout") == 0) {
-            frame = FREMEN_generateFrame("Q", command_array[1], command_array[2]);
+            
+            frame = NULL;
+            //frame = FREMEN_generateFrame("Q", command_array[1], command_array[2]);
+            
+            //frame = FREMEN_generateFrame('Q', command); command array de 1 y de 2 están vacíos  y no tienen nada aquí , 
+            //logout no tiene parámteros hacer variables globales? 
+            
             FREMEN_freeMemory(command,command_lower,command_array);
-            free(frame);
+            //free(frame);
             return 3;
 
         } else if (strcmp(command_array[0],"login") == 0) {
+            
+            frame = NULL;
             FREMEN_login(configuration,command,command_lower,command_array);
-            frame = FREMEN_generateFrame("C", command_array[1], command_array[2]);
-            FREMEN_sendFrame(socket_fd, frame);
+            frame = FREMEN_generateFrameLogin("C", command_array[1], command_array[2]);
+            
+            //FREMEN_sendFrame(socket_fd, frame);
             printf("%s\n", frame);
             printF("Conectado al servidor\n");
 
@@ -343,6 +356,7 @@ int FREMEN_promptChoice(Config configuration) {
     //Comando custom KO, por parametros
   	} else if (isok == 1) {
       FREMEN_freeMemory(command,command_lower,command_array);
+      free(frame);
       return 0;
 
 	//Cuando el  valor retornado sea 2, se abrirá un fork para ejecutar la comanda contra el sistema
@@ -360,8 +374,10 @@ int FREMEN_promptChoice(Config configuration) {
                //Ejecución del comando +  tratamiento si ha ido mal
                if (execvp(command_array[0], command_array) < 0) {
                    FREMEN_freeMemory(command,command_lower,command_array);
+                   free(frame);
                    printF("Error al executar la comanda!\n");
-                   exit(1);
+                   //exit(1);
+                   //raise(SIGINT);// necesario hacer exit o sigint?? 
 			}
       //Código del padre
       } else {

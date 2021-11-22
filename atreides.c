@@ -232,6 +232,7 @@ int configSocket(Config config){
         printF("Error accept\n");
         return -1;
     }
+    
 
     printF("Nueva conexion... \n");
     return nuevo_sock_fd;
@@ -283,6 +284,9 @@ int main(int argc, char **argv) {
 		close(socket_fd);
         raise(SIGINT);
     }
+    
+    
+    //LEER DEL FD DEL SOCKET Y TRATAR LA TRAMA, crear thread por cada nueva conexión. y todo dentro de un while, hasta que llegue la trama de logout. . 
 
 		/*while (!final) {
 
