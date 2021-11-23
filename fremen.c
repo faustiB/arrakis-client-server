@@ -17,14 +17,12 @@ void RsiControlC(void){
 
     free(configuration.ip);
     free(configuration.directory);
+    close(socket_fd);
 
-		close(socket_fd);
     //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
     signal(SIGINT, SIG_DFL);
     raise(SIGINT);
 }
-
-
 
 /* ********************************************************************
 *
@@ -208,9 +206,6 @@ int configSocket(Config config,char * command, char * command_lower, char ** com
     return socket_fd;
 }
 
-
-
-
 /* ********************************************************************
 *
 * @Nombre : FREMEN_login
@@ -228,7 +223,28 @@ void FREMEN_login(Config configuration,char * command, char * command_lower, cha
 }
 
 void FREMEN_sendFrame(int fd, char * frame) {
-    write(fd, frame, strlen(frame));
+    write(fd, frame, sizeof(frame));
+}
+
+/* ********************************************************************
+*
+* @Nombre : FREMEN_generateFrameLogin
+* @Def : ceación de una trama de Fremen
+*
+********************************************************************* */
+char * FREMEN_generateFrame() {
+    char * frame ;
+    int i = 0;
+
+    frame = (char *) malloc (sizeof(char) * 256);
+
+    for (i = 0; i < 256; i++) {
+        frame[i] = '\0';
+    }
+
+    sprintf(frame, "FREMEN");
+    
+    return frame;
 }
 
 /* ********************************************************************
@@ -237,32 +253,64 @@ void FREMEN_sendFrame(int fd, char * frame) {
 * @Def : ceación y generación de la tramapara login. 
 *
 ********************************************************************* */
-char * FREMEN_generateFrameLogin( char * type, char * name, char * zipCode) {
-    char * frame ;
+char * FREMEN_generateFrameLogin(char * frame, char * type, char * name, char * zipCode) {
     int i = 0;
-    
-    frame = (char *) malloc (sizeof(char) * 256);
-    
-    for (i = 0; i < 256; i++) {
-        frame[i] = '\0';
-    }
-    
 
-    
-    sprintf(frame, "FREMEN");
-    
-    for (i = strlen(frame); i < 15; i++) {
-        frame[i] = '\0';
-    }
-    
     strcat(frame, type);
     strcat(frame, "<");
-    
     strcat(frame, name);
     strcat(frame, ">*<");
     strcat(frame, zipCode);
     strcat(frame, ">");
     
+    for (i = strlen(frame); i < 256; i++) {
+        frame[i] = '\0';
+    }
+
+    return frame;
+}
+
+/* ********************************************************************
+*
+* @Nombre : FREMEN_generateFrameLogout
+* @Def : ceación y generación de la tramapara logout.
+*
+********************************************************************* */
+char * FREMEN_generateFrameLogout(char * frame, char * type) {
+    int i = 0;
+
+    strcat(frame, type);
+    strcat(frame, "<");
+    //strcat(frame, global_name); // Variable global de nombre
+    strcat(frame, ">*<");
+    //strcat(frame, gobal_id); // Variable global de id
+    strcat(frame, ">");
+
+    for (i = strlen(frame); i < 256; i++) {
+        frame[i] = '\0';
+    }
+
+    return frame;
+}
+
+/* ********************************************************************
+*
+* @Nombre : FREMEN_generateFrameLogout
+* @Def : ceación y generación de la tramapara logout.
+*
+********************************************************************* */
+char * FREMEN_generateFrameSearch(char * frame, char * type, char * zipCode) {
+    int i = 0;
+
+    strcat(frame, type);
+    strcat(frame, "<");
+    //strcat(frame, global_name); // Variable global de nombre
+    strcat(frame, ">*<");
+    //strcat(frame, gobal_id); // Variable global de id
+    strcat(frame, ">*<");
+    strcat(frame, zipCode);
+    strcat(frame, ">");
+
     for (i = strlen(frame); i < 256; i++) {
         frame[i] = '\0';
     }
@@ -313,24 +361,34 @@ int FREMEN_promptChoice(Config configuration) {
     //Comando custom OK
   	if (isok == 0) {
         if (strcmp(command_array[0],"logout") == 0) {
-            
-            frame = NULL;
-            //frame = FREMEN_generateFrame("Q", command_array[1], command_array[2]);
-            
-            //frame = FREMEN_generateFrame('Q', command); command array de 1 y de 2 están vacíos  y no tienen nada aquí , 
-            //logout no tiene parámteros hacer variables globales? 
-            
-            FREMEN_freeMemory(command,command_lower,command_array);
-            //free(frame);
-            return 3;
+            if (socket_fd > 0) {
+                frame = NULL;
+
+                frame = FREMEN_generateFrame();
+                frame = FREMEN_generateFrameLogout(frame, "Q");
+                FREMEN_sendFrame(socket_fd, frame);
+
+                free(frame);
+                close(socket_fd);
+
+                printf("%s\n", frame);
+
+                FREMEN_freeMemory(command,command_lower,command_array);
+
+                raise(SIGINT);
+            } else {
+                printF("No puc fer logout si no estic connectat al servidor...\n");
+            }
 
         } else if (strcmp(command_array[0],"login") == 0) {
-            
             frame = NULL;
-            FREMEN_login(configuration,command,command_lower,command_array);
-            frame = FREMEN_generateFrameLogin("C", command_array[1], command_array[2]);
-            
-            //FREMEN_sendFrame(socket_fd, frame);
+
+            FREMEN_login(configuration, command, command_lower, command_array);
+
+            frame = FREMEN_generateFrame();
+            frame = FREMEN_generateFrameLogin(frame, "C", command_array[1], command_array[2]);
+            FREMEN_sendFrame(socket_fd, frame);
+
             printf("%s\n", frame);
             printF("Conectado al servidor\n");
 
@@ -340,15 +398,24 @@ int FREMEN_promptChoice(Config configuration) {
             free(frame);
 
         } else if (strcmp(command_array[0],"search") == 0) {
+            if (socket_fd > 0) {
+                frame = NULL;
 
-					//FREMEN_search();
+                frame = FREMEN_generateFrame();
+                frame = FREMEN_generateFrameSearch(frame, "S", command_array[1]);
+                FREMEN_sendFrame(socket_fd, frame);
+
+                printf("%s\n", frame);
+                free(frame);
+            } else {
+                printF("No es pot buscar perque no esteu loginats al servidor... \n");
+            }
+
 
         } else if (strcmp(command_array[0],"send") == 0) {
-
-
+            //Implementar fase 3
         } else if (strcmp(command_array[0],"photo") == 0) {
-
-
+            //Implementar fase 3
         }
 
         FREMEN_freeMemory(command,command_lower,command_array);
@@ -376,8 +443,6 @@ int FREMEN_promptChoice(Config configuration) {
                    FREMEN_freeMemory(command,command_lower,command_array);
                    free(frame);
                    printF("Error al executar la comanda!\n");
-                   //exit(1);
-                   //raise(SIGINT);// necesario hacer exit o sigint?? 
 			}
       //Código del padre
       } else {
