@@ -3,7 +3,7 @@
 void RsiControlC(void);
 
 Config configuration;
-int num_users, socket_fd;;
+int num_users, socket_fd;
 User *users;
 
 /* ********************************************************************
@@ -232,7 +232,7 @@ int configSocket(Config config){
         printF("Error accept\n");
         return -1;
     }
-    
+
 
     printF("Nueva conexion... \n");
     return nuevo_sock_fd;
@@ -249,7 +249,7 @@ int configSocket(Config config){
  ********************************************************************* */
 
 int checkTrama(){
-    
+
     return -1;
 }
 
@@ -277,46 +277,58 @@ int main(int argc, char **argv) {
     //Carga de usuarios en el struct
     users = ATREIDES_fillUsers();
 
-	socket_fd = configSocket(configuration);
-    
-	if (socket_fd < 1) {
-        printF("ERROR: imposible preparar el socket\n");
+		socket_fd = configSocket(configuration);
+
+		if (socket_fd < 1) {
+        	printF("ERROR: imposible preparar el socket\n");
 		close(socket_fd);
         raise(SIGINT);
     }
-    
-    
-    //LEER DEL FD DEL SOCKET Y TRATAR LA TRAMA, crear thread por cada nueva conexión. y todo dentro de un while, hasta que llegue la trama de logout. . 
 
-		/*while (!final) {
+
+    //LEER DEL FD DEL SOCKET Y TRATAR LA TRAMA, crear thread por cada nueva conexión. y todo dentro de un while, hasta que llegue la trama de logout. .
+		char *frame_read;// aux = '\n';//type, *data
+		int i = 0;
+
+		frame_read = (char *) malloc(256 * sizeof(char));
+  	read(socket_fd, frame_read, sizeof(char) * 256);
+
+		printf("%s\n", frame_read);
+
+
+		while(i < 256){
+			if (frame_read[i] == '\0') {
+				printF("Hey\n");
+			}
+			i++;
+		}
+
+		free(frame_read);
+
+
+		/*origin = (char *) malloc(1 * sizeof(char));
+		//Lectura origen
+		while (i < 256) {
+           	read(socket_fd, &aux, sizeof(char));
+						printf("%c\n",aux );
+            origin[i] = aux;
+            i++;
+            origin = realloc(origin, sizeof(char)*(i+1));
+  			}
+
+		free(origin);*/
+
+		/*char aux;
+		while (1) {
 
         aux = '\n';
-        count = 0;
-        name = malloc(sizeof(char));
 
-        while (aux != '\0') {
-            res = read(fd, &aux, sizeof(char));
-            name[count] = aux;
-            count++;
-            name = realloc(name, sizeof(char)*(count+1));
-        }
-        name[count] = '\0';
+				for(int i = 0 ; i < 256; i++){
 
-        print("Comprobando nombre...\n");
-        res = checkName(name, data, num);
 
-        if (res > 0) {
-            result = 1;
-            write(fd, &result, sizeof(int));
-        }else if(res == 0){
-            close(fd);
-            print("\n\nCerrando conexion...\n\n");
-            final = 1;
-        }else{
-            result = 0;
-            write(fd, &result, sizeof(int));
-        }
+				}
 
+				printf("%s\n",frame);
     }*/
 
 

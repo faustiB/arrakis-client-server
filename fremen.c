@@ -47,7 +47,7 @@ char *FREMEN_readUntilIntro(int fd, char caracter, int i) {
 
     return buffer;
 }
- 
+
 /* ********************************************************************
 *
 * @Nombre : FREMEN_fillConfiguration
@@ -222,13 +222,19 @@ void FREMEN_login(Config configuration,char * command, char * command_lower, cha
 	}
 }
 
+/* ********************************************************************
+*
+* @Nombre : FREMEN_sendFrame
+* @Def : Envío de la trama
+*
+********************************************************************* */
 void FREMEN_sendFrame(int fd, char * frame) {
-    write(fd, frame, sizeof(frame));
+    write(fd, frame, sizeof(char)*strlen(frame));
 }
 
 /* ********************************************************************
 *
-* @Nombre : FREMEN_generateFrameLogin
+* @Nombre : FREMEN_generateFrame
 * @Def : ceación de una trama de Fremen
 *
 ********************************************************************* */
@@ -238,19 +244,21 @@ char * FREMEN_generateFrame() {
 
     frame = (char *) malloc (sizeof(char) * 256);
 
-    for (i = 0; i < 256; i++) {
+    sprintf(frame, "FREMEN");
+
+		for (i = strlen(frame); i < 256; i++) {
         frame[i] = '\0';
     }
 
-    sprintf(frame, "FREMEN");
-    
+
+
     return frame;
 }
 
 /* ********************************************************************
 *
 * @Nombre : FREMEN_generateFrameLogin
-* @Def : ceación y generación de la tramapara login. 
+* @Def : ceación y generación de la tramapara login.
 *
 ********************************************************************* */
 char * FREMEN_generateFrameLogin(char * frame, char * type, char * name, char * zipCode) {
@@ -262,7 +270,7 @@ char * FREMEN_generateFrameLogin(char * frame, char * type, char * name, char * 
     strcat(frame, ">*<");
     strcat(frame, zipCode);
     strcat(frame, ">");
-    
+
     for (i = strlen(frame); i < 256; i++) {
         frame[i] = '\0';
     }
@@ -362,16 +370,17 @@ int FREMEN_promptChoice(Config configuration) {
   	if (isok == 0) {
         if (strcmp(command_array[0],"logout") == 0) {
             if (socket_fd > 0) {
-                frame = NULL;
+                //frame = NULL;
 
                 frame = FREMEN_generateFrame();
                 frame = FREMEN_generateFrameLogout(frame, "Q");
                 FREMEN_sendFrame(socket_fd, frame);
 
+								printf("%s\n", frame);
+
                 free(frame);
                 close(socket_fd);
 
-                printf("%s\n", frame);
 
                 FREMEN_freeMemory(command,command_lower,command_array);
 
@@ -383,11 +392,14 @@ int FREMEN_promptChoice(Config configuration) {
         } else if (strcmp(command_array[0],"login") == 0) {
             frame = NULL;
 
+
+						frame = FREMEN_generateFrame();
             FREMEN_login(configuration, command, command_lower, command_array);
 
-            frame = FREMEN_generateFrame();
             frame = FREMEN_generateFrameLogin(frame, "C", command_array[1], command_array[2]);
             FREMEN_sendFrame(socket_fd, frame);
+
+
 
             printf("%s\n", frame);
             printF("Conectado al servidor\n");
