@@ -16,7 +16,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-
+#include <pthread.h>
 
 #define printF(x) write(1, x, strlen(x))
 

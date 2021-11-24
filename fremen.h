@@ -2,7 +2,6 @@
 #define _FREMEN_H
 #define _GNU_SOURCE
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,12 +25,5 @@ typedef struct {
     int port;
     char *directory;
 } Config;
-
-typedef struct {
-    char origin[15];
-    char type;
-    char data[240];
-} Frame;
-
 
 #endif //_FREMEN_H
