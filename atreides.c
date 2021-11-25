@@ -32,51 +32,73 @@ void RsiControlC(void) {
     raise(SIGINT);
 }
 
-void * threadClient(void * fdClient){
+/* ********************************************************************
+ *
+ * @Nombre : ATREIDES_threadClient
+ * @Def : función de thread, por cada cliente.
+ *
+ ********************************************************************* */
+void * ATREIDES_threadClient(void * fdClient){
 
 	 int fd = *((int*)fdClient);
-     
-     //LEER DEL FD DEL SOCKET Y TRATAR LA TRAMA, crear thread por cada nueva conexión. y todo dentro de un while, hasta que llegue la trama de logout. .
-
-     printf("Estem aqui thread \n");
+   Frame frame;
+   int i, exit;
 
      char * frame_read = NULL;
 
-     //No hace la lectura del frame ...
      frame_read = (char * ) malloc(256 * sizeof(char));
-     read(fd, frame_read, sizeof(char) * 256);
 
-     printf("%s\n", frame_read);
+     exit = 0;
+     while (!exit){
+
+         read(fd, frame_read, sizeof(char) * 256);
+
+         i = 0;
+         while (i<15){
+           frame.origin[i] = frame_read[i];
+           i++;
+         }
+
+        frame.type = frame_read[15];
+
+        i = 16;
+        while (i<256){
+          frame.data[i-16] = frame_read[i];
+          i++;
+        }
+
+         printf("%s - %c - %s \n", frame.origin,frame.type,frame.data );
+
+         //mirar tipo y casuística.
+
+         switch (frame.type) {
+              case 'C':
+                //Login
+                break;
+
+              case 'S':
+                  //search
+                  break;
+
+              case 'Q':
+                exit = 1;
+                 //logout
+                break;
+         }
+
+
+     }
+
+
 
      close(fd);
-
-	 pthread_cancel(pthread_self());
-	 pthread_detach(pthread_self());
-
      free(frame_read);
-	 return NULL;
+	   pthread_cancel(pthread_self());
+	   pthread_detach(pthread_self());
 
-     /*
-      * char * buff;
-	 char * cadena;
-	 int sortir = 0;
-	 char * nom = readLine(fd, '\n');
 
-	 while (!sortir){
+	   return NULL;
 
-		 buff = readLine(fd, '\n');
-
-		 if (strcmp(buff,"QUIT") == 0){
-			sortir = 1;
-		 } else {
-			 //no hace falta inicializrlo - diferencia de sprintf
-			 asprintf(&cadena, "Missatge de %s: %s", nom, buff );
-			 printF(cadena);
-			 free(cadena);
-		 }
-		 free(buff);
-
-	 }*/
  }
 
 /* ********************************************************************
@@ -238,15 +260,15 @@ User * ATREIDES_fillUsers() {
 
 /* ********************************************************************
  *
- * @Nombre : configSocket
+ * @Nombre : ATREIDES_configSocket
  * @Def : Extrae los datos del fichero config y prepara el socket
  * @Arg : Out: el fd de la nueva conexion
  *
  ********************************************************************* */
 
-int configSocket(Config config) {
+int ATREIDES_configSocket(Config config) {
 
-    struct sockaddr_in s_addr, cliente_addr;
+    struct sockaddr_in s_addr; //cliente_addr;
     int fdSocket = -1;
 
     fdSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -266,17 +288,11 @@ int configSocket(Config config) {
     }
 
     listen(fdSocket, 3);
-    socklen_t cliente_len = sizeof(cliente_addr);
+    //socklen_t cliente_len = sizeof(cliente_addr);
 
     printF("Esperando nueva conexion... \n");
-    int nuevo_sock_fd = accept(fdSocket, (void * ) & cliente_addr, & cliente_len);
-    if (nuevo_sock_fd < 0) {
-        printF("Error accept\n");
-        return -1;
-    }
+    return fdSocket;
 
-    printF("Nueva conexion... \n");
-    return nuevo_sock_fd;
 }
 
 /* ********************************************************************
@@ -302,7 +318,7 @@ int checkTrama() {
  ********************************************************************* */
 int main(int argc, char ** argv) {
     int clientFD;
-    
+
     //Check de argumentos de entrada
     if (argc != 2) {
         printF("Error, falta el nom de fitxer de configuracio.\n");
@@ -318,7 +334,8 @@ int main(int argc, char ** argv) {
     //Carga de usuarios en el struct
     users = ATREIDES_fillUsers();
 
-    socket_fd = configSocket(configuration);
+    //Config del socket
+    socket_fd = ATREIDES_configSocket(configuration);
 
     if (socket_fd < 1) {
         printF("ERROR: imposible preparar el socket\n");
@@ -326,14 +343,14 @@ int main(int argc, char ** argv) {
         raise(SIGINT);
     }
 
-    //Entra en un bucle infinito... no sé qué hago mal, puede que el pasado de sockets se haga mal.
+
     while(1) {
         printF("Esperant connexions...\n");
         clientFD = accept(socket_fd, (struct sockaddr*) NULL, NULL);
 
         printF("\nNou client connectat!\nMissatge: ");
         pthread_t thrd;
-        pthread_create(&thrd, NULL, threadClient, &clientFD);
+        pthread_create(&thrd, NULL, ATREIDES_threadClient, &clientFD);
     }
 
     raise(SIGINT);

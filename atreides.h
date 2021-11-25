@@ -33,10 +33,10 @@ typedef struct {
 } User;
 
 typedef struct {
-    char origen[15];
-    char tipus;
+    char origin[15];
+    char type;
     char data[240];
-} Trama;
+} Frame;
 
 
 

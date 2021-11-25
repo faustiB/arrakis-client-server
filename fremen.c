@@ -3,6 +3,7 @@
 void RsiControlC(void);
 Config configuration;
 int socket_fd;
+char * global_name, * global_id;
 
 /* ********************************************************************
  *
@@ -218,7 +219,7 @@ void FREMEN_login(Config configuration, char * command, char * command_lower, ch
  *
  ********************************************************************* */
 void FREMEN_sendFrame(int fd, char * frame) {
-    write(fd, frame, sizeof(char) * strlen(frame));
+    write(fd, frame, 256);
 }
 
 /* ********************************************************************
@@ -235,7 +236,7 @@ char * FREMEN_generateFrame() {
 
     sprintf(frame, "FREMEN");
 
-    for (i = strlen(frame); i < 256; i++) {
+    for (i = strlen(frame); i < 15; i++) {
         frame[i] = '\0';
     }
 
@@ -248,20 +249,32 @@ char * FREMEN_generateFrame() {
  * @Def : ceación y generación de la tramapara login.
  *
  ********************************************************************* */
-char * FREMEN_generateFrameLogin(char * frame, char * type, char * name, char * zipCode) {
-    int i = 0;
+char * FREMEN_generateFrameLogin(char * frame, char type, char * name, char * zipCode) {
+    int i = 0, j = 0;
 
-    strcat(frame, type);
-    strcat(frame, "<");
+    char * buffer;
+
+    frame[15] = type;
+
+    asprintf(&buffer, "%s*%s", name , zipCode);
+
+    for (i = 16; buffer[i-16] != '\0'; i++) {
+        frame[i] = buffer[i-16];
+    }
+
+    for(j = i; j < 256; j++){
+      frame[j] = '\0';
+    }
+
+    /*strcat(frame, type);
     strcat(frame, name);
-    strcat(frame, ">*<");
-    strcat(frame, zipCode);
-    strcat(frame, ">");
+    strcat(frame, "*");
+    strcat(frame, zipCode);*/
 
-    for (i = strlen(frame); i < 256; i++) {
-        frame[i] = '\0';
-    }
+    /*for (i = strlen(frame); i < 256; i++) {
 
+    }*/
+    free(buffer);
     return frame;
 }
 
@@ -271,9 +284,23 @@ char * FREMEN_generateFrameLogin(char * frame, char * type, char * name, char * 
  * @Def : ceación y generación de la tramapara logout.
  *
  ********************************************************************* */
-char * FREMEN_generateFrameLogout(char * frame, char * type) {
-    int i = 0;
+char * FREMEN_generateFrameLogout(char * frame, char type) {
+    int i = 0, j = 0;
 
+    char * buffer;
+    //Cambiar char* por char
+    frame[15] = type;
+
+    asprintf(&buffer, "%s*%s", global_name , global_id);
+
+    for (i = 16; buffer[i-16] != '\0'; i++) {
+        frame[i] = buffer[i-16];
+    }
+
+    for(j = i; j < 256; j++){
+      frame[j] = '\0';
+    }
+    /*
     strcat(frame, type);
     strcat(frame, "<");
     //strcat(frame, global_name); // Variable global de nombre
@@ -283,20 +310,34 @@ char * FREMEN_generateFrameLogout(char * frame, char * type) {
 
     for (i = strlen(frame); i < 256; i++) {
         frame[i] = '\0';
-    }
+    }*/
 
     return frame;
 }
 
 /* ********************************************************************
  *
- * @Nombre : FREMEN_generateFrameLogout
+ * @Nombre : FREMEN_generateFrameSearch
  * @Def : ceación y generación de la tramapara logout.
  *
  ********************************************************************* */
-char * FREMEN_generateFrameSearch(char * frame, char * type, char * zipCode) {
-    int i = 0;
+char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
+    int i = 0, j = 0;
 
+    char * buffer;
+    //Cambiar char* por char
+    frame[15] = type;
+
+    asprintf(&buffer, "%s*%s*%s", global_name , global_id, zipCode);
+
+    for (i = 16; buffer[i-16] != '\0'; i++) {
+        frame[i] = buffer[i-16];
+    }
+
+    for(j = i; j < 256; j++){
+      frame[j] = '\0';
+    }
+    /*
     strcat(frame, type);
     strcat(frame, "<");
     //strcat(frame, global_name); // Variable global de nombre
@@ -308,7 +349,7 @@ char * FREMEN_generateFrameSearch(char * frame, char * type, char * zipCode) {
 
     for (i = strlen(frame); i < 256; i++) {
         frame[i] = '\0';
-    }
+    }*/
 
     return frame;
 }
@@ -359,7 +400,7 @@ int FREMEN_promptChoice(Config configuration) {
                 //frame = NULL;
 
                 frame = FREMEN_generateFrame();
-                frame = FREMEN_generateFrameLogout(frame, "Q");
+                frame = FREMEN_generateFrameLogout(frame, 'Q');
                 FREMEN_sendFrame(socket_fd, frame);
 
                 printf("%s\n", frame);
@@ -380,7 +421,7 @@ int FREMEN_promptChoice(Config configuration) {
             frame = FREMEN_generateFrame();
             FREMEN_login(configuration, command, command_lower, command_array);
 
-            frame = FREMEN_generateFrameLogin(frame, "C", command_array[1], command_array[2]);
+            frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
             FREMEN_sendFrame(socket_fd, frame);
 
             printf("%s\n", frame);
@@ -388,6 +429,7 @@ int FREMEN_promptChoice(Config configuration) {
 
             //Al rebre el ID des de atreides, hem de guardar com a variable global el nom i el ID, ja que
             //ho necessitem per totes les altres opcions de fremen.
+            //Siguiendo en la linea de lo que comentas, se ha de hacer un read al fddel socket, para leer la respuesta.
 
             free(frame);
 
@@ -396,7 +438,7 @@ int FREMEN_promptChoice(Config configuration) {
                 frame = NULL;
 
                 frame = FREMEN_generateFrame();
-                frame = FREMEN_generateFrameSearch(frame, "S", command_array[1]);
+                frame = FREMEN_generateFrameSearch(frame, 'S', command_array[1]);
                 FREMEN_sendFrame(socket_fd, frame);
 
                 printf("%s\n", frame);
