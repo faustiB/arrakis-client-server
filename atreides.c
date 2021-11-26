@@ -38,68 +38,82 @@ void RsiControlC(void) {
  * @Def : función de thread, por cada cliente.
  *
  ********************************************************************* */
-void * ATREIDES_threadClient(void * fdClient){
+void * ATREIDES_threadClient(void * fdClient) {
 
-	 int fd = *((int*)fdClient);
-   Frame frame;
-   int i, exit;
+    int fd = * ((int * ) fdClient);
+    Frame frame;
+    int i, j, exit;
+    char * frame_read = NULL, *name = NULL, *zipCode = NULL;
 
-     char * frame_read = NULL;
+    frame_read = (char * ) malloc(256 * sizeof(char));
 
-     frame_read = (char * ) malloc(256 * sizeof(char));
+    exit = 0;
+    while (!exit) {
 
-     exit = 0;
-     while (!exit){
+        read(fd, frame_read, sizeof(char) * 256);
 
-         read(fd, frame_read, sizeof(char) * 256);
-
-         i = 0;
-         while (i<15){
-           frame.origin[i] = frame_read[i];
-           i++;
-         }
+        i = 0;
+        while (i < 15) {
+            frame.origin[i] = frame_read[i];
+            i++;
+        }
 
         frame.type = frame_read[15];
 
         i = 16;
-        while (i<256){
-          frame.data[i-16] = frame_read[i];
-          i++;
+        while (i < 256) {
+            frame.data[i - 16] = frame_read[i];
+            i++;
         }
 
-         printf("%s - %c - %s \n", frame.origin,frame.type,frame.data );
-
-         //mirar tipo y casuística.
-
-         switch (frame.type) {
-              case 'C':
+        //mirar tipo y casuística.
+        switch (frame.type) {
+            case 'C':
                 //Login
+                users_read = (User * ) malloc(sizeof(User) * num_users);
+                i = 0;
+                name = (char * ) malloc(100 * sizeof(char));
+                while(frame.data[i] != '*') {
+                    name[i] = frame.data[i];
+                    i++;
+                }
+                name[i] = '\0';
+                i++;
+
+                j = 0;
+                zipCode = (char * ) malloc(100 * sizeof(char));
+                while(frame.data[i] != '\0') {
+                    zipCode[j] = frame.data[i];
+                    i++;
+                    j++;
+                }
+                zipCode[j] = '\0';
+
+                printf("Rebut login %s %s\n", name, zipCode);
+                free(name);
+                free(zipCode);
                 break;
 
-              case 'S':
-                  //search
-                  break;
+            case 'S':
+                //search
+                break;
 
-              case 'Q':
+            case 'Q':
                 exit = 1;
-                 //logout
+                //logout
                 break;
-         }
+        }
 
+    }
 
-     }
+    close(fd);
+    free(frame_read);
+    pthread_cancel(pthread_self());
+    pthread_detach(pthread_self());
 
+    return NULL;
 
-
-     close(fd);
-     free(frame_read);
-	   pthread_cancel(pthread_self());
-	   pthread_detach(pthread_self());
-
-
-	   return NULL;
-
- }
+}
 
 /* ********************************************************************
  *
@@ -251,7 +265,6 @@ User * ATREIDES_fillUsers() {
             i++;
         }
 
-        printF("Llegit fitxer de usuaris\n");
         close(fd);
     }
 
@@ -273,7 +286,7 @@ int ATREIDES_configSocket(Config config) {
 
     fdSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (fdSocket < 0) {
-        printF("ERROR: creacion de socket\n");
+        printF("ERROR durant la creacio del socket\n");
         return -1;
     }
 
@@ -283,16 +296,13 @@ int ATREIDES_configSocket(Config config) {
     s_addr.sin_addr.s_addr = inet_addr(config.ip);
 
     if (bind(fdSocket, (void * ) & s_addr, sizeof(s_addr)) < 0) {
-        printF("ERROR: bind\n");
+        printF("ERROR fent el bind\n");
         return -1;
     }
 
     listen(fdSocket, 3);
-    //socklen_t cliente_len = sizeof(cliente_addr);
 
-    printF("Esperando nueva conexion... \n");
     return fdSocket;
-
 }
 
 /* ********************************************************************
@@ -343,14 +353,12 @@ int main(int argc, char ** argv) {
         raise(SIGINT);
     }
 
-
-    while(1) {
+    while (1) {
         printF("Esperant connexions...\n");
-        clientFD = accept(socket_fd, (struct sockaddr*) NULL, NULL);
+        clientFD = accept(socket_fd, (struct sockaddr * ) NULL, NULL);
 
-        printF("\nNou client connectat!\nMissatge: ");
         pthread_t thrd;
-        pthread_create(&thrd, NULL, ATREIDES_threadClient, &clientFD);
+        pthread_create( & thrd, NULL, ATREIDES_threadClient, & clientFD);
     }
 
     raise(SIGINT);
