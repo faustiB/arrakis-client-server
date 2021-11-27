@@ -31,6 +31,82 @@ void RsiControlC(void) {
     signal(SIGINT, SIG_DFL);
     raise(SIGINT);
 }
+/* ********************************************************************
+ *
+ * @Nombre : ATREIDES_threadClient
+ * @Def : función de thread, por cada cliente.
+ *
+ ********************************************************************* */
+void ATREIDES_addUser(User u){
+
+    //int fd;
+
+
+    //fd = open("Atreides/users_memory.txt", O_RDONLY);
+
+    printf("%d\n",num_users);
+
+    printf("%d %s %s\n",u.id,u.username,u.postal_code);
+
+    /*users = (User *) realloc (users, num_users);*/
+
+    /*users[num_users].username = (char *) malloc( (sizeof(char) * strlen(u.username)) + 1);
+    users[num_users].postal_code = (char *) malloc( (sizeof(char) * strlen(u.postal_code)) + 1);
+
+    users[num_users].id = u.id;
+    strcpy(users[num_users].username, u.username);
+    strcpy(users[num_users].postal_code,u.postal_code);
+
+
+    printf("%d %s %s\n",users[num_users].id,users[num_users].username,users[num_users].postal_code);
+
+    free(u.username);
+    free(u.postal_code);*/
+}
+
+
+/* ********************************************************************
+ *
+ * @Nombre : ATREIDES_threadClient
+ * @Def : función de thread, por cada cliente.
+ *
+ ********************************************************************* */
+ User ATREIDES_receiveLogin(char data[240]){
+
+    int i, j ;
+    User u;
+
+    i = 0;
+    u.username = (char * ) malloc(1 * sizeof(char));
+    while(data[i] != '*') {
+       u.username[i] = data[i];
+       u.username = (char * ) realloc(u.username, i + 2);
+       i++;
+    }
+     u.username[i] = '\0';
+
+     i++;
+
+     j = 0;
+     u.postal_code = (char * ) malloc(1 * sizeof(char));
+
+     while(data[i] != '\0') {
+         u.postal_code[j] = data[i];
+         u.postal_code = (char * ) realloc(u.postal_code, i + 2);
+         i++;
+         j++;
+     }
+     u.postal_code[j] = '\0';
+
+     //set del id a 0 , en el caso que tenga, si no tiene se le asignará uno nuevo .
+     u.id = 0;
+     printf("\nRebut login %s %s\n", u.username, u.postal_code);
+
+
+     return u;
+ }
+
+
 
 /* ********************************************************************
  *
@@ -42,8 +118,9 @@ void * ATREIDES_threadClient(void * fdClient) {
 
     int fd = * ((int * ) fdClient);
     Frame frame;
-    int i, j, exit;
-    char * frame_read = NULL, *name = NULL, *zipCode = NULL;
+    int i, exit;
+    User u;
+    char * frame_read = NULL;//, *name = NULL, *zipCode = NULL;
 
     frame_read = (char * ) malloc(256 * sizeof(char));
 
@@ -66,32 +143,29 @@ void * ATREIDES_threadClient(void * fdClient) {
             i++;
         }
 
+        free(frame_read);
+
         //mirar tipo y casuística.
         switch (frame.type) {
             case 'C':
                 //Login
-                users_read = (User * ) malloc(sizeof(User) * num_users);
+                u = ATREIDES_receiveLogin(frame.data);
                 i = 0;
-                name = (char * ) malloc(100 * sizeof(char));
-                while(frame.data[i] != '*') {
-                    name[i] = frame.data[i];
-                    i++;
-                }
-                name[i] = '\0';
-                i++;
+                for (i = 0; i < num_users; i++){
 
-                j = 0;
-                zipCode = (char * ) malloc(100 * sizeof(char));
-                while(frame.data[i] != '\0') {
-                    zipCode[j] = frame.data[i];
-                    i++;
-                    j++;
-                }
-                zipCode[j] = '\0';
+                  if (strcmp(u.username, users[i].username) == 0) {
+                      printf("\Encotrado user : %s, con id : %d!!\n", u.username, users[i].id);
+                      u.id = users[i].id;
+                  }
 
-                printf("Rebut login %s %s\n", name, zipCode);
-                free(name);
-                free(zipCode);
+                }
+
+                if(u.id  == 0){
+                  num_users ++;
+                  u.id = num_users;
+                  //ATREIDES_addUser(u);
+                }
+
                 break;
 
             case 'S':
@@ -106,10 +180,11 @@ void * ATREIDES_threadClient(void * fdClient) {
 
     }
 
+    //close(fd);
+    //free(frame_read);
     close(fd);
-    free(frame_read);
-    pthread_cancel(pthread_self());
     pthread_detach(pthread_self());
+    pthread_cancel(pthread_self());
 
     return NULL;
 

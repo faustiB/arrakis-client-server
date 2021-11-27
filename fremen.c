@@ -377,7 +377,8 @@ int FREMEN_promptChoice(Config configuration) {
 
     //Tratamiento pasar cadena a minúscula
     command_lower = strdup(command);
-    for (size_t i = 0; command_lower[i] != '\0'; ++i) {
+    i = 0;
+    for (size_t i = 0; command_lower[i] != ' '; ++i) {
         command_lower[i] = tolower((unsigned char) command_lower[i]);
     }
     //Tratamiento del comando para separar la cadena de entrada.
