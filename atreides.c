@@ -31,39 +31,92 @@ void RsiControlC(void) {
     signal(SIGINT, SIG_DFL);
     raise(SIGINT);
 }
+
+/* ********************************************************************
+ *
+ * @Nombre : ATREIDES_generateFrame
+ * @Def : ceación de una trama de Atreides
+ *
+ ********************************************************************* */
+char * ATREIDES_generateFrame() {
+    char * frame;
+    int i = 0;
+
+    frame = (char * ) malloc(sizeof(char) * 256);
+
+    sprintf(frame, "ATREIDES");
+
+    for (i = strlen(frame); i < 15; i++) {
+        frame[i] = '\0';
+    }
+
+    return frame;
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : ATREIDES_generateFrameLogin
+ * @Def : ceación y generación de la trama de respuesta para login.
+ *
+ ********************************************************************* */
+char * ATREIDES_generateFrameLogin(char * frame, char type, int id) {
+    int i = 0, j = 0;
+
+    char * buffer;
+
+    frame[15] = type;
+
+    printf("%c - %d\n", frame[15], id);
+
+    asprintf(&buffer, "%i", id);
+
+    for (i = 16; buffer[i-16] != '\0'; i++) {
+        frame[i] = buffer[i-16];
+    }
+
+    for(j = i; j < 256; j++){
+      frame[j] = '\0';
+    }
+
+    printf("Frame %s\n", frame);
+
+    free(buffer);
+    return frame;
+}
+
 /* ********************************************************************
  *
  * @Nombre : ATREIDES_threadClient
  * @Def : función de thread, por cada cliente.
  *
  ********************************************************************* */
-void ATREIDES_addUser(User u){
+void ATREIDES_addUser(User u) {
 
     //int fd;
 
-
     //fd = open("Atreides/users_memory.txt", O_RDONLY);
 
-    printf("%d\n",num_users);
+    printf("%d\n", num_users);
 
-    printf("%d %s %s\n",u.id,u.username,u.postal_code);
+    printf("%d %s %s\n", u.id, u.username, u.postal_code);
 
-    /*users = (User *) realloc (users, num_users);*/
+    /*
+    users = (User * ) realloc(users, num_users);
+    printf("%d %ld %ld\n", u.id, strlen(u.username), strlen(u.postal_code));
 
-    /*users[num_users].username = (char *) malloc( (sizeof(char) * strlen(u.username)) + 1);
+    users[num_users].username = (char *) malloc( (sizeof(char) * strlen(u.username)) + 1);
     users[num_users].postal_code = (char *) malloc( (sizeof(char) * strlen(u.postal_code)) + 1);
 
     users[num_users].id = u.id;
     strcpy(users[num_users].username, u.username);
-    strcpy(users[num_users].postal_code,u.postal_code);
+    strcpy(users[num_users].postal_code, u.postal_code);
 
-
-    printf("%d %s %s\n",users[num_users].id,users[num_users].username,users[num_users].postal_code);
-
+    printf("%d %s %s\n", users[num_users].id, users[num_users].username, users[num_users].postal_code);
+    */
+    
     free(u.username);
-    free(u.postal_code);*/
+    free(u.postal_code);
 }
-
 
 /* ********************************************************************
  *
@@ -71,42 +124,39 @@ void ATREIDES_addUser(User u){
  * @Def : función de thread, por cada cliente.
  *
  ********************************************************************* */
- User ATREIDES_receiveLogin(char data[240]){
+User ATREIDES_receiveLogin(char data[240]) {
 
-    int i, j ;
+    int i, j;
     User u;
 
     i = 0;
     u.username = (char * ) malloc(1 * sizeof(char));
-    while(data[i] != '*') {
-       u.username[i] = data[i];
-       u.username = (char * ) realloc(u.username, i + 2);
-       i++;
+    while (data[i] != '*') {
+        u.username[i] = data[i];
+        u.username = (char * ) realloc(u.username, i + 2);
+        i++;
     }
-     u.username[i] = '\0';
+    u.username[i] = '\0';
 
-     i++;
+    i++;
 
-     j = 0;
-     u.postal_code = (char * ) malloc(1 * sizeof(char));
+    j = 0;
+    u.postal_code = (char * ) malloc(1 * sizeof(char));
 
-     while(data[i] != '\0') {
-         u.postal_code[j] = data[i];
-         u.postal_code = (char * ) realloc(u.postal_code, i + 2);
-         i++;
-         j++;
-     }
-     u.postal_code[j] = '\0';
+    while (data[i] != '\0') {
+        u.postal_code[j] = data[i];
+        u.postal_code = (char * ) realloc(u.postal_code, i + 2);
+        i++;
+        j++;
+    }
+    u.postal_code[j] = '\0';
 
-     //set del id a 0 , en el caso que tenga, si no tiene se le asignará uno nuevo .
-     u.id = 0;
-     printf("\nRebut login %s %s\n", u.username, u.postal_code);
+    //set del id a 0 , en el caso que tenga, si no tiene se le asignará uno nuevo .
+    u.id = 0;
+    printf("\nRebut login %s %s\n", u.username, u.postal_code);
 
-
-     return u;
- }
-
-
+    return u;
+}
 
 /* ********************************************************************
  *
@@ -120,7 +170,7 @@ void * ATREIDES_threadClient(void * fdClient) {
     Frame frame;
     int i, exit;
     User u;
-    char * frame_read = NULL;//, *name = NULL, *zipCode = NULL;
+    char * frame_read = NULL, * frame_send = NULL;
 
     frame_read = (char * ) malloc(256 * sizeof(char));
 
@@ -147,35 +197,39 @@ void * ATREIDES_threadClient(void * fdClient) {
 
         //mirar tipo y casuística.
         switch (frame.type) {
-            case 'C':
-                //Login
-                u = ATREIDES_receiveLogin(frame.data);
-                i = 0;
-                for (i = 0; i < num_users; i++){
-
-                  if (strcmp(u.username, users[i].username) == 0) {
-                      printf("\Encotrado user : %s, con id : %d!!\n", u.username, users[i].id);
-                      u.id = users[i].id;
-                  }
-
+        case 'C':
+            //Login
+            u = ATREIDES_receiveLogin(frame.data);
+            i = 0;
+            for (i = 0; i < num_users; i++) {
+                if (strcmp(u.username, users[i].username) == 0) {
+                    printf("\nEncontrado user : %s, con id : %d!!\n", u.username, users[i].id);
+                    u.id = users[i].id;
                 }
+            }
 
-                if(u.id  == 0){
-                  num_users ++;
-                  u.id = num_users;
-                  //ATREIDES_addUser(u);
-                }
+            if (u.id == 0) {
+                num_users++;
+                u.id = num_users;
+                //ATREIDES_addUser(u);
+            }
 
-                break;
+            frame_send = ATREIDES_generateFrame();
+            frame_send = ATREIDES_generateFrameLogin(frame_send, 'O', u.id);
 
-            case 'S':
-                //search
-                break;
+            printf("Trama final: %s\n", frame_send);
 
-            case 'Q':
-                exit = 1;
-                //logout
-                break;
+            free(frame_send);
+            break;
+
+        case 'S':
+            //search
+            break;
+
+        case 'Q':
+            exit = 1;
+            //logout
+            break;
         }
 
     }

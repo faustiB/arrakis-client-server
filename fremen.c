@@ -266,14 +266,6 @@ char * FREMEN_generateFrameLogin(char * frame, char type, char * name, char * zi
       frame[j] = '\0';
     }
 
-    /*strcat(frame, type);
-    strcat(frame, name);
-    strcat(frame, "*");
-    strcat(frame, zipCode);*/
-
-    /*for (i = strlen(frame); i < 256; i++) {
-
-    }*/
     free(buffer);
     return frame;
 }
@@ -300,17 +292,6 @@ char * FREMEN_generateFrameLogout(char * frame, char type) {
     for(j = i; j < 256; j++){
       frame[j] = '\0';
     }
-    /*
-    strcat(frame, type);
-    strcat(frame, "<");
-    //strcat(frame, global_name); // Variable global de nombre
-    strcat(frame, ">*<");
-    //strcat(frame, gobal_id); // Variable global de id
-    strcat(frame, ">");
-
-    for (i = strlen(frame); i < 256; i++) {
-        frame[i] = '\0';
-    }*/
 
     return frame;
 }
@@ -337,19 +318,6 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
     for(j = i; j < 256; j++){
       frame[j] = '\0';
     }
-    /*
-    strcat(frame, type);
-    strcat(frame, "<");
-    //strcat(frame, global_name); // Variable global de nombre
-    strcat(frame, ">*<");
-    //strcat(frame, gobal_id); // Variable global de id
-    strcat(frame, ">*<");
-    strcat(frame, zipCode);
-    strcat(frame, ">");
-
-    for (i = strlen(frame); i < 256; i++) {
-        frame[i] = '\0';
-    }*/
 
     return frame;
 }
@@ -425,7 +393,6 @@ int FREMEN_promptChoice(Config configuration) {
             frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
             FREMEN_sendFrame(socket_fd, frame);
 
-            printf("%s\n", frame);
             printF("Conectado al servidor\n");
 
             //Al rebre el ID des de atreides, hem de guardar com a variable global el nom i el ID, ja que
