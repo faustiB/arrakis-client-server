@@ -38,15 +38,15 @@ void RsiControlC(void) {
  * @Def : ceación de una trama de Atreides
  *
  ********************************************************************* */
-char * ATREIDES_generateFrame() {
-    char * frame;
+unsigned char * ATREIDES_generateFrame() {
+    unsigned char * frame;
     int i = 0;
 
-    frame = (char * ) malloc(sizeof(char) * 256);
+    frame = (unsigned char * ) malloc(sizeof(unsigned char) * 256);
 
-    sprintf(frame, "ATREIDES");
+    sprintf((char*)frame, "ATREIDES");
 
-    for (i = strlen(frame); i < 15; i++) {
+    for (i = strlen((char*)frame); i < 15; i++) {
         frame[i] = '\0';
     }
 
@@ -59,29 +59,18 @@ char * ATREIDES_generateFrame() {
  * @Def : ceación y generación de la trama de respuesta para login.
  *
  ********************************************************************* */
-char * ATREIDES_generateFrameLogin(char * frame, char type, int id) {
-    int i = 0, j = 0;
+unsigned char * ATREIDES_generateFrameLogin(unsigned char * frame, char type, int id) {
+    int i = 0;
+    char * buffer = NULL;
 
-    char * buffer;
+    buffer = (char*) malloc (sizeof(char) * 256);
+    sprintf(buffer, "%s%c%i", frame, type, id);
 
-    frame[15] = type;
-
-    printf("%c - %d\n", frame[15], id);
-
-    asprintf(&buffer, "%i", id);
-
-    for (i = 16; buffer[i-16] != '\0'; i++) {
-        frame[i] = buffer[i-16];
+    for(i = strlen(buffer)+1; i < 256; i++){
+      buffer[i] = '\0';
     }
 
-    for(j = i; j < 256; j++){
-      frame[j] = '\0';
-    }
-
-    printf("Frame %s\n", frame);
-
-    free(buffer);
-    return frame;
+    return (unsigned char*) buffer;
 }
 
 /* ********************************************************************
@@ -100,19 +89,26 @@ void ATREIDES_addUser(User u) {
 
     printf("%d %s %s\n", u.id, u.username, u.postal_code);
 
-    /*
-    users = (User * ) realloc(users, num_users);
-    printf("%d %ld %ld\n", u.id, strlen(u.username), strlen(u.postal_code));
+
+    /*users = (User * ) realloc(users, num_users);
+    //printf("%d %ld %ld\n", u.id, strlen(u.username), strlen(u.postal_code));
 
     users[num_users].username = (char *) malloc( (sizeof(char) * strlen(u.username)) + 1);
     users[num_users].postal_code = (char *) malloc( (sizeof(char) * strlen(u.postal_code)) + 1);
 
     users[num_users].id = u.id;
     strcpy(users[num_users].username, u.username);
-    strcpy(users[num_users].postal_code, u.postal_code);
+    strcpy(users[num_users].postal_code, u.postal_code);*/
+
+    //1. fer el num users ++
+    //2. Escriurel al fitxer
+    //3. Escriure els del struct
+    //4. Escriure el nou
+    //5. Esborrar struct
+    //6. Llegir nou struct
 
     printf("%d %s %s\n", users[num_users].id, users[num_users].username, users[num_users].postal_code);
-    */
+
     
     free(u.username);
     free(u.postal_code);
@@ -170,13 +166,13 @@ void * ATREIDES_threadClient(void * fdClient) {
     Frame frame;
     int i, exit;
     User u;
-    char * frame_read = NULL, * frame_send = NULL;
-
-    frame_read = (char * ) malloc(256 * sizeof(char));
+    unsigned char * frame_read = NULL, * frame_send = NULL;
 
     exit = 0;
     while (!exit) {
 
+        //es pot fer estatic
+        frame_read = (unsigned char * ) malloc(256 * sizeof(char));
         read(fd, frame_read, sizeof(char) * 256);
 
         i = 0;
@@ -219,6 +215,8 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             printf("Trama final: %s\n", frame_send);
 
+            //free(u.username);
+            //free(u.postal_code);
             free(frame_send);
             break;
 

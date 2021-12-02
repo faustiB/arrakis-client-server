@@ -319,6 +319,8 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
       frame[j] = '\0';
     }
 
+    free(buffer);
+
     return frame;
 }
 
@@ -330,7 +332,7 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
  ********************************************************************* */
 int FREMEN_promptChoice(Config configuration) {
     char * command = NULL, * command_lower = NULL, * frame = NULL;
-    char * ( * command_array);
+    char * ( * command_array), character = ' ';
     int i = 0, num_of_words = 0, isok = 0;
 
     //Lectura por pantalla del comando y tratado para quedarnos con una cadena
@@ -343,21 +345,28 @@ int FREMEN_promptChoice(Config configuration) {
         return 0;
     }
 
-    //Tratamiento pasar cadena a minúscula
-    command_lower = strdup(command);
-    i = 0;
-    for (size_t i = 0; command_lower[i] != ' '; ++i) {
-        command_lower[i] = tolower((unsigned char) command_lower[i]);
-    }
     //Tratamiento del comando para separar la cadena de entrada.
     command_array = (char ** ) malloc(sizeof(char * ));
-    command_array[i] = strtok(command_lower, " ");
+    command_array[i] = strtok(command, " ");
 
     while (command_array[i] != NULL) {
         num_of_words++;
         command_array = realloc(command_array, (num_of_words + 1) * sizeof(char * ));
         command_array[++i] = strtok(NULL, " ");
     }
+
+    //Tratamiento pasar cadena a minúscula
+    command_lower = strdup(command);
+    i = 0;
+    if (num_of_words == 1) {
+        character = '\0';
+    } else {
+        character = ' ';
+    }
+
+    for (size_t i = 0; command_lower[i] != character; ++i) {
+            command_lower[i] = tolower((unsigned char) command_lower[i]);
+        }
 
     //Checkeo del número de parametros.
     isok = FREMEN_checkNumberOfWords(command_array[0], num_of_words);
