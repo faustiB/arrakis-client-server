@@ -26,4 +26,11 @@ typedef struct {
     char *directory;
 } Config;
 
+typedef struct {
+    char origin[15];
+    char type;
+    char data[240];
+} Frame;
+
+
 #endif //_FREMEN_H
