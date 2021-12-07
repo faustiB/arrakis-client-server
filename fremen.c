@@ -475,7 +475,7 @@ int FREMEN_promptChoice(Config configuration) {
 
     //Comando custom OK
     if (isok == 0) {
-        if (strcmp(command_array[0], "logout") == 0) {
+        if (strcmp(command_lower, "logout") == 0) {
             if (socket_fd > 0) {
                 //frame = NULL;
 
@@ -493,7 +493,7 @@ int FREMEN_promptChoice(Config configuration) {
                 printF("No puc fer logout si no estic connectat al servidor...\n");
             }
 
-        } else if (strcmp(command_array[0], "login") == 0) {
+        } else if (strcmp(command_lower, "login") == 0) {
 
             if (control_login == 0) {
 
@@ -536,7 +536,7 @@ int FREMEN_promptChoice(Config configuration) {
 
           }
 
-        } else if (strcmp(command_array[0], "search") == 0) {
+        } else if (strcmp(command_lower, "search") == 0) {
             if (socket_fd > 0) {
                 frame = NULL;
 
@@ -553,9 +553,9 @@ int FREMEN_promptChoice(Config configuration) {
                 printF("No es pot buscar perque no esteu loginats al servidor... \n");
             }
 
-        } else if (strcmp(command_array[0], "send") == 0) {
+        } else if (strcmp(command_lower, "send") == 0) {
             //Implementar fase 3
-        } else if (strcmp(command_array[0], "photo") == 0) {
+        } else if (strcmp(command_lower, "photo") == 0) {
             //Implementar fase 3
         }
 
