@@ -282,7 +282,6 @@ char * FREMEN_generateFrameLogout(char * frame, char type) {
     int i = 0, j = 0;
 
     char * buffer, id_str[3];
-    //Cambiar char* por char
     frame[15] = type;
 
     snprintf(id_str, 3, "%d", user_id);
@@ -364,6 +363,76 @@ Frame FREMEN_receiveFrame(int fd){
 
 /* ********************************************************************
  *
+ * @Nombre : FREMEN_showSearchReceived
+ * @Def : Función para tratar el comando que se introduce
+ *
+ ********************************************************************* */
+
+void FREMEN_showSearchReceived(char data[240], char * postal_code){
+
+    int i,k, num_searched_users = 0;
+    char * num_searched_users_str, *name, *id_user, cadena[100];
+
+
+
+   i = 0;
+   num_searched_users_str = (char * ) malloc(1 * sizeof(char));
+   while (data[i] != '*') {
+       num_searched_users_str[i] = data[i];
+       num_searched_users_str = (char * ) realloc(num_searched_users_str, i + 2);
+       i++;
+   }
+   num_searched_users_str[i] = '\0';
+   num_searched_users = atoi(num_searched_users_str);
+
+   i++;
+
+   sprintf(cadena, "\nHi ha %s persones humanes a %s\n", num_searched_users_str,postal_code);
+   write(STDOUT_FILENO,cadena, strlen(cadena));
+
+   for (int j = 0; j < num_searched_users; j++ ){
+     k = 0;
+     name = (char * ) malloc(1 * sizeof(char));
+
+     while (data[i] != '*') {
+         name[k] = data[i];
+         name = (char * ) realloc(name, k + 2);
+         i++;
+         k++;
+     }
+
+
+     name[k] = '\0';
+     i++;
+
+     id_user = (char * ) malloc(1 * sizeof(char));
+     k = 0;
+
+
+     while (data[i] != '*' && data[i] != '\0' ) {
+         id_user[k] = data[i];
+         id_user = (char * ) realloc(id_user, k + 2);
+         i++;
+         k++;
+     }
+     id_user[k] = '\0';
+
+     i++;
+
+
+     sprintf(cadena, "%s %s\n", id_user, name);
+     write(STDOUT_FILENO,cadena, strlen(cadena));
+
+     free(name);
+     free(id_user);
+   }
+
+   free(num_searched_users_str);
+
+}
+
+/* ********************************************************************
+ *
  * @Nombre : FREMEN_promptChoice
  * @Def : Función para tratar el comando que se introduce
  *
@@ -394,14 +463,15 @@ int FREMEN_promptChoice(Config configuration) {
     }
 
     //Tratamiento pasar cadena a minúscula
-    command_lower = strdup(command);
-
+    //command_lower = strdup(command);
+    command_lower = strdup(command_array[0]);
     for (size_t i = 0; command_lower[i] != '\0'; ++i) {
             command_lower[i] = tolower((unsigned char) command_lower[i]);
         }
 
     //Checkeo del número de parametros.
-    isok = FREMEN_checkNumberOfWords(command_array[0], num_of_words);
+    //isok = FREMEN_checkNumberOfWords(command_array[0], num_of_words);
+    isok = FREMEN_checkNumberOfWords(command_lower, num_of_words);
 
     //Comando custom OK
     if (isok == 0) {
@@ -412,8 +482,6 @@ int FREMEN_promptChoice(Config configuration) {
                 frame = FREMEN_generateFrame();
                 frame = FREMEN_generateFrameLogout(frame, 'Q');
                 FREMEN_sendFrame(socket_fd, frame);
-
-                printf("%s\n", frame);
 
                 free(frame);
                 close(socket_fd);
@@ -475,8 +543,11 @@ int FREMEN_promptChoice(Config configuration) {
                 frame = FREMEN_generateFrame();
                 frame = FREMEN_generateFrameSearch(frame, 'S', command_array[1]);
                 FREMEN_sendFrame(socket_fd, frame);
+                Frame frame_received;
+                frame_received = FREMEN_receiveFrame(socket_fd);
 
-                printf("%s\n", frame);
+                FREMEN_showSearchReceived(frame_received.data,command_array[1]);
+
                 free(frame);
             } else {
                 printF("No es pot buscar perque no esteu loginats al servidor... \n");
