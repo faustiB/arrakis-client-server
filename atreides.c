@@ -54,6 +54,11 @@ void RsiControlC(void) {
     for (int i = 0; i < num_users; i++) {
         free(users[i].username);
         free(users[i].postal_code);
+        if (users[i].file_descriptor != -1) {
+            close(users[i].file_descriptor);
+            pthread_detach(users[i].thread);
+            pthread_cancel(users[i].thread);
+        }
     }
     free(users);
 
@@ -225,6 +230,7 @@ User * ATREIDES_fillUsers() {
             users_read[i].username = ATREIDES_read_until(fd, '-');
 
             users_read[i].postal_code = ATREIDES_read_until(fd, '\n');
+            users_read[i].file_descriptor = -1;
 
             free(buffer);
             i++;
@@ -251,6 +257,8 @@ void ATREIDES_addUser(User u) {
     users[num_users-1].id = u.id;
     strcpy(users[num_users-1].username, u.username);
     strcpy(users[num_users-1].postal_code, u.postal_code);
+    users[num_users-1].file_descriptor = u.file_descriptor;
+    users[num_users-1].thread = u.thread;
 }
 
 /* ********************************************************************
@@ -445,10 +453,16 @@ void * ATREIDES_threadClient(void * fdClient) {
             //Login
             u = ATREIDES_receiveUser(frame.data);
 
+            //assignem el filedescriptor obert per tancarlo al final
+            u.file_descriptor = fd;
+            u.thread = pthread_self();
+
             i = 0;
             for (i = 0; i < num_users; i++) {
                 if (strcmp(u.username, users[i].username) == 0) {
                     u.id = users[i].id;
+                    users[i].file_descriptor = fd;
+                    users[i].thread = pthread_self();
                 }
             }
 
@@ -494,7 +508,9 @@ void * ATREIDES_threadClient(void * fdClient) {
         case 'Q':
             exit = 1;
 
+            //Li passem el file descriptor com a -1 per a que no el tanqui de nou després.
             u = ATREIDES_receiveUser(frame.data);
+            
             sprintf(cadena, "\nRebut Logout de  %s %s \nDesconnectat d'Atreides.\n", u.username, u.postal_code);
             write(STDOUT_FILENO, cadena, strlen(cadena));
 
@@ -601,21 +617,6 @@ int ATREIDES_configSocket(Config config) {
     listen(fdSocket, 3);
 
     return fdSocket;
-}
-
-/* ********************************************************************
- *
- * @Nombre : checkTrama
- * @Def : Comprueba si existe el nombre
- * @Arg : In : nombre a buscar
- *        Out: un boleano que declara si se
- *             ha encontrado una coincidencia
- *
- ********************************************************************* */
-
-int checkTrama() {
-
-    return -1;
 }
 
 /* ********************************************************************

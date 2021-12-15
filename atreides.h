@@ -30,6 +30,8 @@ typedef struct {
     int id;
     char *username;
     char *postal_code;
+    int file_descriptor;
+    pthread_t thread;
 } User;
 
 typedef struct {
