@@ -93,11 +93,11 @@ char * ATREIDES_generateFrame() {
     char * frame;
     int i = 0;
 
-    frame = (char *) malloc(sizeof(char) * 256);
+    frame = (char * ) malloc(sizeof(char) * 256);
 
-    sprintf((char*)frame, "ATREIDES");
+    sprintf((char * ) frame, "ATREIDES");
 
-    for (i = strlen((char*)frame); i < 15; i++) {
+    for (i = strlen((char * ) frame); i < 15; i++) {
         frame[i] = '\0';
     }
 
@@ -110,7 +110,7 @@ char * ATREIDES_generateFrame() {
  * @Def : ceación y generación de la trama de respuesta para login.
  *
  ********************************************************************* */
- char * ATREIDES_generateFrameLogin( char * frame, char type, int id) {
+char * ATREIDES_generateFrameLogin(char * frame, char type, int id) {
 
     int i = 0, j = 0;
 
@@ -119,14 +119,14 @@ char * ATREIDES_generateFrame() {
     frame[15] = type;
 
     snprintf(id_str, 3, "%d", id);
-    asprintf(&buffer, "%s", id_str);
+    asprintf( & buffer, "%s", id_str);
 
-    for (i = 16; buffer[i-16] != '\0'; i++) {
-        frame[i] = buffer[i-16];
+    for (i = 16; buffer[i - 16] != '\0'; i++) {
+        frame[i] = buffer[i - 16];
     }
 
-    for(j = i; j < 256; j++){
-      frame[j] = '\0';
+    for (j = i; j < 256; j++) {
+        frame[j] = '\0';
     }
 
     free(buffer);
@@ -140,19 +140,18 @@ char * ATREIDES_generateFrame() {
  * @Def : ceación y generación de la trama de respuesta para search.
  *
  ********************************************************************* */
- char * ATREIDES_generateFrameSearch( char * frame, char type, char * str) {
+char * ATREIDES_generateFrameSearch(char * frame, char type, char * str) {
 
     int i = 0, j = 0;
 
     frame[15] = type;
 
-
-    for (i = 16; str[i-16] != '\0'; i++) {
-        frame[i] = str[i-16];
+    for (i = 16; str[i - 16] != '\0'; i++) {
+        frame[i] = str[i - 16];
     }
 
-    for(j = i; j < 256; j++){
-      frame[j] = '\0';
+    for (j = i; j < 256; j++) {
+        frame[j] = '\0';
     }
 
     //free(str);
@@ -170,10 +169,6 @@ User * ATREIDES_fillUsers() {
     char caracter = ' ', * buffer;
     int fd, i = 0;
     User * users_read;
-
-    //
-    // Leer de fichero de config
-    //
 
     //Apertura del fichero
     fd = open("Atreides/users_memory.txt", O_RDONLY);
@@ -211,45 +206,41 @@ User * ATREIDES_fillUsers() {
 
 /* ********************************************************************
  *
- * @Nombre : ATREIDES_threadClient
- * @Def : función de thread, por cada cliente.
+ * @Nombre : ATREIDES_addUser
+ * @Def : ...
  *
  ********************************************************************* */
 void ATREIDES_addUser(User u) {
-    char * buffer,num_users_str[3], id_str[3],id_str_new[3];
+    char * buffer, num_users_str[3], id_str[3], id_str_new[3];
     int fd;
 
-
-    fd = open("Atreides/users_memory.txt",O_CREAT | O_RDWR, 0666);
+    fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR, 0666);
 
     if (fd < 0) {
         printF("Fitxer de usuaris erroni\n");
         raise(SIGINT);
     } else {
         snprintf(num_users_str, 3, "%d", num_users);
-        asprintf(&buffer, "%s\n", num_users_str);
-        write(fd,buffer,sizeof(char)*strlen(buffer));
+        asprintf( & buffer, "%s\n", num_users_str);
+        write(fd, buffer, sizeof(char) * strlen(buffer));
 
-
-        for(int i = 0 ; i < num_users - 1; i++){
+        for (int i = 0; i < num_users - 1; i++) {
 
             snprintf(id_str, 3, "%d", users[i].id);
-            asprintf(&buffer, "%s-%s-%s\n", id_str,users[i].username,users[i].postal_code);
-            write(fd,buffer,sizeof(char)*strlen(buffer));
+            asprintf( & buffer, "%s-%s-%s\n", id_str, users[i].username, users[i].postal_code);
+            write(fd, buffer, sizeof(char) * strlen(buffer));
 
         }
 
         snprintf(id_str_new, 3, "%d", u.id);
-        asprintf(&buffer, "%s-%s-%s\n", id_str_new,u.username,u.postal_code);
-        write(fd,buffer,sizeof(char)*strlen(buffer));
+        asprintf( & buffer, "%s-%s-%s\n", id_str_new, u.username, u.postal_code);
+        write(fd, buffer, sizeof(char) * strlen(buffer));
 
-        memset(&users, 0, sizeof(users));
+        memset( & users, 0, sizeof(users));
 
         close(fd);
 
-
         users = ATREIDES_fillUsers();
-
 
     }
 }
@@ -293,61 +284,56 @@ User ATREIDES_receiveUser(char data[240]) {
     return u;
 }
 
-
-
 /* ********************************************************************
  *
  * @Nombre : ATREIDES_receiveUser
  * @Def : Recepcion de usuario
  *
  ********************************************************************* */
-User ATREIDES_receiveSearch(char data[240]){
-  int i, j, k;
-  User u;
-  char *id;
+User ATREIDES_receiveSearch(char data[240]) {
+    int i, j, k;
+    User u;
+    char * id;
 
-  i = 0;
+    i = 0;
 
-  u.username = (char * ) malloc(1 * sizeof(char));
-  while (data[i] != '*') {
-      u.username[i] = data[i];
-      u.username = (char * ) realloc(u.username, i + 2);
-      i++;
-  }
-  u.username[i] = '\0';
-  i++;
+    u.username = (char * ) malloc(1 * sizeof(char));
+    while (data[i] != '*') {
+        u.username[i] = data[i];
+        u.username = (char * ) realloc(u.username, i + 2);
+        i++;
+    }
+    u.username[i] = '\0';
+    i++;
 
-  j = 0;
-  id = (char * ) malloc(1 * sizeof(char));
+    j = 0;
+    id = (char * ) malloc(1 * sizeof(char));
 
-  while (data[i] != '*') {
-      id[j] = data[i];
-      id = (char * ) realloc(id, j + 2);
-      i++;
-      j++;
-  }
-  id[j] = '\0';
-  i++;
+    while (data[i] != '*') {
+        id[j] = data[i];
+        id = (char * ) realloc(id, j + 2);
+        i++;
+        j++;
+    }
+    id[j] = '\0';
+    i++;
 
-  u.id = atoi(id);
+    u.id = atoi(id);
 
-  k = 0;
-  u.postal_code = (char * ) malloc(1 * sizeof(char));
+    k = 0;
+    u.postal_code = (char * ) malloc(1 * sizeof(char));
 
-  while (data[i] != '\0') {
-      u.postal_code[k] = data[i];
-      u.postal_code = (char * ) realloc(u.postal_code, k + 2);
-      i++;
-      k++;
-  }
-  u.postal_code[k] = '\0';
+    while (data[i] != '\0') {
+        u.postal_code[k] = data[i];
+        u.postal_code = (char * ) realloc(u.postal_code, k + 2);
+        i++;
+        k++;
+    }
+    u.postal_code[k] = '\0';
 
-  free(id);
-  return u;
+    free(id);
+    return u;
 }
-
-
-
 
 /* ********************************************************************
  *
@@ -355,8 +341,8 @@ User ATREIDES_receiveSearch(char data[240]){
  * @Def : Envío de la trama
  *
  ********************************************************************* */
-void ATREIDES_sendFrame(int fd,char * frame) {
-    write(fd,frame, 256);
+void ATREIDES_sendFrame(int fd, char * frame) {
+    write(fd, frame, 256);
     printF("Enviada resposta\n");
 }
 /* ********************************************************************
@@ -365,9 +351,9 @@ void ATREIDES_sendFrame(int fd,char * frame) {
  * @Def : Rececpción de trama
  *
  ********************************************************************* */
-Frame ATREIDES_receiveFrame(int fd){
+Frame ATREIDES_receiveFrame(int fd) {
     int i;
-    char  frame_read[256];
+    char frame_read[256];
     Frame frame;
 
     read(fd, frame_read, sizeof(char) * 256);
@@ -395,36 +381,36 @@ Frame ATREIDES_receiveFrame(int fd){
  * @Def : Buscar Ususarios por  codigo postal
  *
  ********************************************************************* */
-char* ATREIDES_searchUsers(User u){
+char * ATREIDES_searchUsers(User u) {
+
+    //Li passem numusers i a mesura que afegim si strlen(res) i ja hem omplert la trama,
+    // creem un altre string per passar.
 
     int num_users_pc = 0, i;
     char * res, num_users_pc_str[3], id_str[3];
 
+    for (i = 0; i < num_users; i++) {
+        if (strcmp(users[i].postal_code, u.postal_code) == 0) {
+            num_users_pc++;
 
-    for(i = 0; i < num_users; i++){
-      if (strcmp(users[i].postal_code, u.postal_code) == 0 ) {
-          num_users_pc++;
-
-      }
+        }
     }
 
     snprintf(num_users_pc_str, 3, "%d", num_users_pc);
-    asprintf(&res, "%s", num_users_pc_str);
+    asprintf( & res, "%s", num_users_pc_str);
 
-    for(i = 0; i < num_users; i++){
-      if (strcmp(users[i].postal_code, u.postal_code) == 0 ) {
+    for (i = 0; i < num_users; i++) {
+        if (strcmp(users[i].postal_code, u.postal_code) == 0) {
 
-          snprintf(id_str, 3, "%d", users[i].id);
-          asprintf(&res, "%s*%s*%s",res,users[i].username, id_str);
+            snprintf(id_str, 3, "%d", users[i].id);
+            asprintf( & res, "%s*%s*%s", res, users[i].username, id_str);
 
-
-      }
+        }
     }
 
     return res;
 
 }
-
 
 /* ********************************************************************
  *
@@ -445,7 +431,6 @@ void * ATREIDES_threadClient(void * fdClient) {
 
         frame = ATREIDES_receiveFrame(fd);
 
-
         //mirar tipo y casuística.
         switch (frame.type) {
         case 'C':
@@ -465,13 +450,11 @@ void * ATREIDES_threadClient(void * fdClient) {
                 ATREIDES_addUser(u);
             }
 
-            sprintf(cadena, "\nRebut Login de %s %s\nAssignat a ID %d.\n", u.username, u.postal_code,u.id);
-            write(STDOUT_FILENO,cadena, sizeof(char)*strlen(cadena));
+            sprintf(cadena, "\nRebut Login de %s %s\nAssignat a ID %d.\n", u.username, u.postal_code, u.id);
+            write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
 
             frame_send = ATREIDES_generateFrame();
             frame_send = ATREIDES_generateFrameLogin(frame_send, 'O', u.id);
-
-
 
             ATREIDES_sendFrame(fd, frame_send);
 
@@ -485,15 +468,14 @@ void * ATREIDES_threadClient(void * fdClient) {
             u = ATREIDES_receiveSearch(frame.data);
 
             sprintf(cadena, "\nRebut Search %s de %s %d\n", u.postal_code, u.username, u.id);
-            write(STDOUT_FILENO,cadena, strlen(cadena));
+            write(STDOUT_FILENO, cadena, strlen(cadena));
 
             search_data = ATREIDES_searchUsers(u);
 
             frame_send = ATREIDES_generateFrame();
-            frame_send = ATREIDES_generateFrameSearch(frame_send,'S',search_data);
+            frame_send = ATREIDES_generateFrameSearch(frame_send, 'S', search_data);
 
-
-            ATREIDES_sendFrame(fd,frame_send);
+            ATREIDES_sendFrame(fd, frame_send);
 
             free(search_data);
             free(frame_send);
@@ -506,8 +488,7 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             u = ATREIDES_receiveUser(frame.data);
             sprintf(cadena, "\nRebut Logout de  %s %s \nDesconnectat d'Atreides.\n", u.username, u.postal_code);
-            write(STDOUT_FILENO,cadena, strlen(cadena));
-
+            write(STDOUT_FILENO, cadena, strlen(cadena));
 
             break;
         }
@@ -515,14 +496,14 @@ void * ATREIDES_threadClient(void * fdClient) {
     }
 
     close(fd);
+
+    //guardarem el pid del thread per a dins de la rsi, poder tancar-lo. Afegir valor al user.
     pthread_detach(pthread_self());
     pthread_cancel(pthread_self());
 
     return NULL;
 
 }
-
-
 
 /* ********************************************************************
  *
@@ -547,7 +528,6 @@ char * ATREIDES_readDelimiter(int fd, char delimiter) {
 
     return msg;
 }
-
 
 /* ********************************************************************
  *
@@ -580,7 +560,6 @@ Config ATREIDES_fillConfiguration(char * argv) {
 
     return c;
 }
-
 
 /* ********************************************************************
  *

@@ -258,14 +258,14 @@ char * FREMEN_generateFrameLogin(char * frame, char type, char * name, char * zi
 
     frame[15] = type;
 
-    asprintf(&buffer, "%s*%s", name , zipCode);
+    asprintf( & buffer, "%s*%s", name, zipCode);
 
-    for (i = 16; buffer[i-16] != '\0'; i++) {
-        frame[i] = buffer[i-16];
+    for (i = 16; buffer[i - 16] != '\0'; i++) {
+        frame[i] = buffer[i - 16];
     }
 
-    for(j = i; j < 256; j++){
-      frame[j] = '\0';
+    for (j = i; j < 256; j++) {
+        frame[j] = '\0';
     }
 
     free(buffer);
@@ -286,14 +286,14 @@ char * FREMEN_generateFrameLogout(char * frame, char type) {
 
     snprintf(id_str, 3, "%d", user_id);
 
-    asprintf(&buffer, "%s*%s", user_name , id_str);
+    asprintf( & buffer, "%s*%s", user_name, id_str);
 
-    for (i = 16; buffer[i-16] != '\0'; i++) {
-        frame[i] = buffer[i-16];
+    for (i = 16; buffer[i - 16] != '\0'; i++) {
+        frame[i] = buffer[i - 16];
     }
 
-    for(j = i; j < 256; j++){
-      frame[j] = '\0';
+    for (j = i; j < 256; j++) {
+        frame[j] = '\0';
     }
 
     free(buffer);
@@ -315,14 +315,14 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
 
     snprintf(id_str, 3, "%d", user_id);
 
-    asprintf(&buffer, "%s*%s*%s", user_name , id_str, zipCode);
+    asprintf( & buffer, "%s*%s*%s", user_name, id_str, zipCode);
 
-    for (i = 16; buffer[i-16] != '\0'; i++) {
-        frame[i] = buffer[i-16];
+    for (i = 16; buffer[i - 16] != '\0'; i++) {
+        frame[i] = buffer[i - 16];
     }
 
-    for(j = i; j < 256; j++){
-      frame[j] = '\0';
+    for (j = i; j < 256; j++) {
+        frame[j] = '\0';
     }
 
     free(buffer);
@@ -336,9 +336,9 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
  * @Def : Rececpción de trama
  *
  ********************************************************************* */
-Frame FREMEN_receiveFrame(int fd){
+Frame FREMEN_receiveFrame(int fd) {
     int i;
-    char  frame_read[256];
+    char frame_read[256];
     Frame frame;
 
     read(fd, frame_read, sizeof(char) * 256);
@@ -360,7 +360,6 @@ Frame FREMEN_receiveFrame(int fd){
     return frame;
 }
 
-
 /* ********************************************************************
  *
  * @Nombre : FREMEN_showSearchReceived
@@ -368,66 +367,61 @@ Frame FREMEN_receiveFrame(int fd){
  *
  ********************************************************************* */
 
-void FREMEN_showSearchReceived(char data[240], char * postal_code){
+void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
-    int i,k, num_searched_users = 0;
-    char * num_searched_users_str, *name, *id_user, cadena[100];
+    int i, k, num_searched_users = 0;
+    char * num_searched_users_str, * name, * id_user, cadena[100];
 
+    i = 0;
+    num_searched_users_str = (char * ) malloc(1 * sizeof(char));
+    while (data[i] != '*') {
+        num_searched_users_str[i] = data[i];
+        num_searched_users_str = (char * ) realloc(num_searched_users_str, i + 2);
+        i++;
+    }
+    num_searched_users_str[i] = '\0';
+    num_searched_users = atoi(num_searched_users_str);
 
+    i++;
 
-   i = 0;
-   num_searched_users_str = (char * ) malloc(1 * sizeof(char));
-   while (data[i] != '*') {
-       num_searched_users_str[i] = data[i];
-       num_searched_users_str = (char * ) realloc(num_searched_users_str, i + 2);
-       i++;
-   }
-   num_searched_users_str[i] = '\0';
-   num_searched_users = atoi(num_searched_users_str);
+    sprintf(cadena, "\nHi ha %s persones humanes a %s\n", num_searched_users_str, postal_code);
+    write(STDOUT_FILENO, cadena, strlen(cadena));
 
-   i++;
+    for (int j = 0; j < num_searched_users; j++) {
+        k = 0;
+        name = (char * ) malloc(1 * sizeof(char));
 
-   sprintf(cadena, "\nHi ha %s persones humanes a %s\n", num_searched_users_str,postal_code);
-   write(STDOUT_FILENO,cadena, strlen(cadena));
+        while (data[i] != '*') {
+            name[k] = data[i];
+            name = (char * ) realloc(name, k + 2);
+            i++;
+            k++;
+        }
 
-   for (int j = 0; j < num_searched_users; j++ ){
-     k = 0;
-     name = (char * ) malloc(1 * sizeof(char));
+        name[k] = '\0';
+        i++;
 
-     while (data[i] != '*') {
-         name[k] = data[i];
-         name = (char * ) realloc(name, k + 2);
-         i++;
-         k++;
-     }
+        id_user = (char * ) malloc(1 * sizeof(char));
+        k = 0;
 
+        while (data[i] != '*' && data[i] != '\0') {
+            id_user[k] = data[i];
+            id_user = (char * ) realloc(id_user, k + 2);
+            i++;
+            k++;
+        }
+        id_user[k] = '\0';
 
-     name[k] = '\0';
-     i++;
+        i++;
 
-     id_user = (char * ) malloc(1 * sizeof(char));
-     k = 0;
+        sprintf(cadena, "%s %s\n", id_user, name);
+        write(STDOUT_FILENO, cadena, strlen(cadena));
 
+        free(name);
+        free(id_user);
+    }
 
-     while (data[i] != '*' && data[i] != '\0' ) {
-         id_user[k] = data[i];
-         id_user = (char * ) realloc(id_user, k + 2);
-         i++;
-         k++;
-     }
-     id_user[k] = '\0';
-
-     i++;
-
-
-     sprintf(cadena, "%s %s\n", id_user, name);
-     write(STDOUT_FILENO,cadena, strlen(cadena));
-
-     free(name);
-     free(id_user);
-   }
-
-   free(num_searched_users_str);
+    free(num_searched_users_str);
 
 }
 
@@ -466,8 +460,8 @@ int FREMEN_promptChoice(Config configuration) {
     //command_lower = strdup(command);
     command_lower = strdup(command_array[0]);
     for (size_t i = 0; command_lower[i] != '\0'; ++i) {
-            command_lower[i] = tolower((unsigned char) command_lower[i]);
-        }
+        command_lower[i] = tolower((unsigned char) command_lower[i]);
+    }
 
     //Checkeo del número de parametros.
     //isok = FREMEN_checkNumberOfWords(command_array[0], num_of_words);
@@ -490,6 +484,7 @@ int FREMEN_promptChoice(Config configuration) {
 
                 raise(SIGINT);
             } else {
+                //Si no estem connectats, hem de poder fer logout tambe.
                 printF("No puc fer logout si no estic connectat al servidor...\n");
             }
 
@@ -497,44 +492,42 @@ int FREMEN_promptChoice(Config configuration) {
 
             if (control_login == 0) {
 
+                frame = NULL;
 
-            frame = NULL;
+                frame = FREMEN_generateFrame();
+                FREMEN_login(configuration, command, command_lower, command_array);
 
-            frame = FREMEN_generateFrame();
-            FREMEN_login(configuration, command, command_lower, command_array);
+                frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
 
-            frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
+                FREMEN_sendFrame(socket_fd, frame);
 
-            FREMEN_sendFrame(socket_fd, frame);
+                printF("Conectado al servidor\n");
 
-            printF("Conectado al servidor\n");
+                Frame frame_received;
 
-            Frame frame_received;
+                frame_received = FREMEN_receiveFrame(socket_fd);
 
-            frame_received = FREMEN_receiveFrame(socket_fd);
+                if (frame_received.type == 'O') {
+                    control_login = 1;
 
-            if (frame_received.type == 'O') {
-                control_login = 1;
+                    user_id = atoi(frame_received.data);
+                    user_name = (char * ) malloc(sizeof(char) * strlen(command_array[1]) + 1);
+                    strcpy(user_name, command_array[1]);
 
-                user_id = atoi(frame_received.data);
-                user_name = (char *) malloc (sizeof(char) * strlen(command_array[1])+1);
-                strcpy(user_name, command_array[1]);
+                    sprintf(cadena, "Benvingut %s. Tens ID: %d. \n", user_name, user_id);
+                    write(STDOUT_FILENO, cadena, strlen(cadena));
+                    printF("Ara estàs connectat a Atreides.\n");
 
-                sprintf(cadena, "Benvingut %s. Tens ID: %d. \n", user_name, user_id);
-                write(STDOUT_FILENO,cadena, strlen(cadena));
-                printF("Ara estàs connectat a Atreides.\n");
+                } else if (frame_received.type == 'E') {
+                    printF("Error a l'hora de fer el login. \n");
+                }
 
+                free(frame);
+            } else {
 
-            } else if(frame_received.type == 'E'){
-                printF("Error a l'hora de fer el login. \n");
+                printF("Ja has fet login, estàs connectat a Atreides. \n");
+
             }
-
-            free(frame);
-          } else {
-
-            printF("Ja has fet login, estàs connectat a Atreides. \n");
-
-          }
 
         } else if (strcmp(command_lower, "search") == 0) {
             if (socket_fd > 0) {
@@ -546,7 +539,7 @@ int FREMEN_promptChoice(Config configuration) {
                 Frame frame_received;
                 frame_received = FREMEN_receiveFrame(socket_fd);
 
-                FREMEN_showSearchReceived(frame_received.data,command_array[1]);
+                FREMEN_showSearchReceived(frame_received.data, command_array[1]);
 
                 free(frame);
             } else {
