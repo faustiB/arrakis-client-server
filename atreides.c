@@ -8,6 +8,36 @@ User * users;
 
 /* ********************************************************************
  *
+ * @Nombre : UpdateFile
+ * @Def :
+ *
+ ********************************************************************* */
+void UpdateFile() {
+    char cadena[100];
+    int fd;
+
+    fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR, 0666);
+
+    if (fd < 0) {
+        printF("Fitxer de usuaris erroni\n");
+        raise(SIGINT);
+    } else {
+
+        sprintf(cadena, "%d\n", num_users);
+        write(fd, cadena, sizeof(char) * strlen(cadena));
+
+        for (int i = 0; i < num_users; i++) {
+            sprintf(cadena,  "%d-%s-%s\n", users[i].id, users[i].username, users[i].postal_code);
+            write(fd, cadena, sizeof(char) * strlen(cadena));
+            memset(cadena,0,strlen(cadena));
+        }
+
+        close(fd);
+    }
+}
+
+/* ********************************************************************
+ *
  * @Nombre : RsiControlC
  * @Def : Rutina asociada a la interrupción Control+C.
  *
@@ -18,6 +48,8 @@ void RsiControlC(void) {
 
     free(configuration.ip);
     free(configuration.directory);
+
+    UpdateFile();
 
     for (int i = 0; i < num_users; i++) {
         free(users[i].username);
@@ -211,38 +243,14 @@ User * ATREIDES_fillUsers() {
  *
  ********************************************************************* */
 void ATREIDES_addUser(User u) {
-    char * buffer, num_users_str[3], id_str[3], id_str_new[3];
-    int fd;
 
-    fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR, 0666);
+    users = (User *) realloc (users, ((num_users) * sizeof(User)));
+    users[num_users-1].username = (char * ) malloc(sizeof(u.username));
+    users[num_users-1].postal_code = (char * ) malloc(sizeof(u.postal_code));
 
-    if (fd < 0) {
-        printF("Fitxer de usuaris erroni\n");
-        raise(SIGINT);
-    } else {
-        snprintf(num_users_str, 3, "%d", num_users);
-        asprintf( & buffer, "%s\n", num_users_str);
-        write(fd, buffer, sizeof(char) * strlen(buffer));
-
-        for (int i = 0; i < num_users - 1; i++) {
-
-            snprintf(id_str, 3, "%d", users[i].id);
-            asprintf( & buffer, "%s-%s-%s\n", id_str, users[i].username, users[i].postal_code);
-            write(fd, buffer, sizeof(char) * strlen(buffer));
-
-        }
-
-        snprintf(id_str_new, 3, "%d", u.id);
-        asprintf( & buffer, "%s-%s-%s\n", id_str_new, u.username, u.postal_code);
-        write(fd, buffer, sizeof(char) * strlen(buffer));
-
-        memset( & users, 0, sizeof(users));
-
-        close(fd);
-
-        users = ATREIDES_fillUsers();
-
-    }
+    users[num_users-1].id = u.id;
+    strcpy(users[num_users-1].username, u.username);
+    strcpy(users[num_users-1].postal_code, u.postal_code);
 }
 
 /* ********************************************************************
@@ -286,8 +294,8 @@ User ATREIDES_receiveUser(char data[240]) {
 
 /* ********************************************************************
  *
- * @Nombre : ATREIDES_receiveUser
- * @Def : Recepcion de usuario
+ * @Nombre : ATREIDES_receiveSearch
+ * @Def : Recepcion de trama search
  *
  ********************************************************************* */
 User ATREIDES_receiveSearch(char data[240]) {
