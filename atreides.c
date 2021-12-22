@@ -208,36 +208,51 @@ User * ATREIDES_fillUsers() {
     User * users_read;
 
     //Apertura del fichero
-    fd = open("Atreides/users_memory.txt", O_RDONLY);
+    //fd = open("Atreides/users_memory.txt", O_RDONLY);
+    fd = open("Atreides/users_memory2.txt", O_RDONLY);
 
     if (fd < 0) {
-        printF("Fitxer de usuaris erroni\n");
-        raise(SIGINT);
-    } else {
+        //printF("Fitxer de usuaris erroni\n");
 
-        buffer = ATREIDES_readUntilIntro(fd, caracter, i);
-        num_users = atoi(buffer);
-        users_read = (User * ) malloc(sizeof(User) * num_users);
-        free(buffer);
+        //fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR , 0666);
+        fd = open("Atreides/users_memory2.txt", O_CREAT | O_RDWR , 0666);
+        if(fd < 0){
 
-        i = 0;
-        while (i < num_users) {
+            printF("Error creant fitxer\n");
+            raise(SIGINT);
 
-            buffer = NULL;
-            buffer = ATREIDES_read_until(fd, '-');
-            users_read[i].id = atoi(buffer);
+        } else {
 
-            users_read[i].username = ATREIDES_read_until(fd, '-');
+            write(fd,"1\n",2);
+            write(fd,"1-Admin-00000\n",strlen("1-Admin-00000\n"));
 
-            users_read[i].postal_code = ATREIDES_read_until(fd, '\n');
-            users_read[i].file_descriptor = -1;
-
-            free(buffer);
-            i++;
         }
 
-        close(fd);
     }
+
+    buffer = ATREIDES_readUntilIntro(fd, caracter, i);
+    num_users = atoi(buffer);
+    users_read = (User * ) malloc(sizeof(User) * num_users);
+    free(buffer);
+
+    i = 0;
+    while (i < num_users) {
+
+        buffer = NULL;
+        buffer = ATREIDES_read_until(fd, '-');
+        users_read[i].id = atoi(buffer);
+
+        users_read[i].username = ATREIDES_read_until(fd, '-');
+
+        users_read[i].postal_code = ATREIDES_read_until(fd, '\n');
+        users_read[i].file_descriptor = -1;
+
+        free(buffer);
+        i++;
+    }
+
+    close(fd);
+
 
     return users_read;
 }
@@ -459,7 +474,7 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             i = 0;
             for (i = 0; i < num_users; i++) {
-                if (strcmp(u.username, users[i].username) == 0) {
+                if ( ( strcmp(u.username, users[i].username) == 0 ) && ( strcmp(u.postal_code, users[i].postal_code) == 0 ) ) {
                     u.id = users[i].id;
                     users[i].file_descriptor = fd;
                     users[i].thread = pthread_self();
