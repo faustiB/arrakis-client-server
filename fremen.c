@@ -14,11 +14,15 @@ char * user_name;
 void RsiControlC(void) {
 
     //Printamos el mensaje de adiós al sistema
-    printF("\n\nDesconnectat d’Atreides. Dew!\n\n");
+    printF("\n\nAturant Fremen... \n\n");
 
     free(configuration.ip);
     free(configuration.directory);
     free(user_name);
+    
+    if (socket_fd == -1) {
+        socket_fd = 0;
+    }
 
     close(socket_fd);
 
@@ -192,8 +196,8 @@ int configSocket(Config config, char * command, char * command_lower, char ** co
     if (connect(socket_fd, (void * ) & s_addr, sizeof(s_addr)) < 0) {
         printF("ERROR: connect del cliente\n");
         close(socket_fd);
+        socket_fd = -1;
         FREMEN_freeMemory(command, command_lower, command_array);
-        raise(SIGINT);
     }
 
     return socket_fd;
@@ -210,7 +214,6 @@ void FREMEN_login(Config configuration, char * command, char * command_lower, ch
     socket_fd = configSocket(configuration, command, command_lower, command_array);
     if (socket_fd < 1) {
         printF("ERROR: no se ha podido conectar el socket\n");
-        raise(SIGINT);
     }
 }
 
@@ -471,7 +474,6 @@ int FREMEN_promptChoice(Config configuration) {
     if (isok == 0) {
         if (strcmp(command_lower, "logout") == 0) {
             if (socket_fd > 0) {
-                //frame = NULL;
 
                 frame = FREMEN_generateFrame();
                 frame = FREMEN_generateFrameLogout(frame, 'Q');
@@ -479,54 +481,57 @@ int FREMEN_promptChoice(Config configuration) {
 
                 free(frame);
                 close(socket_fd);
+                socket_fd = 0;
 
-                FREMEN_freeMemory(command, command_lower, command_array);
+                printF("\nDesconnectat d’Atreides. Dew!\n\n");
 
-                raise(SIGINT);
             } else {
-                //Si no estem connectats, hem de poder fer logout tambe.
                 printF("No puc fer logout si no estic connectat al servidor...\n");
             }
 
         } else if (strcmp(command_lower, "login") == 0) {
-
-            if (control_login == 0) {
+            if (socket_fd == 0) {
 
                 frame = NULL;
 
                 frame = FREMEN_generateFrame();
                 FREMEN_login(configuration, command, command_lower, command_array);
 
-                frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
+                if (socket_fd > 0) {
+                    frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
 
-                FREMEN_sendFrame(socket_fd, frame);
+                    FREMEN_sendFrame(socket_fd, frame);
 
-                printF("Conectado al servidor\n");
+                    printF("Conectado al servidor\n");
 
-                Frame frame_received;
+                    Frame frame_received;
 
-                frame_received = FREMEN_receiveFrame(socket_fd);
+                    frame_received = FREMEN_receiveFrame(socket_fd);
 
-                if (frame_received.type == 'O') {
-                    control_login = 1;
+                    if (frame_received.type == 'O') {
+                        control_login = 1;
 
-                    user_id = atoi(frame_received.data);
-                    user_name = (char * ) malloc(sizeof(char) * strlen(command_array[1]) + 1);
-                    strcpy(user_name, command_array[1]);
+                        user_id = atoi(frame_received.data);
+                        user_name = (char * ) malloc(sizeof(char) * strlen(command_array[1]) + 1);
+                        strcpy(user_name, command_array[1]);
 
-                    sprintf(cadena, "Benvingut %s. Tens ID: %d. \n", user_name, user_id);
-                    write(STDOUT_FILENO, cadena, strlen(cadena));
-                    printF("Ara estàs connectat a Atreides.\n");
+                        sprintf(cadena, "Benvingut %s. Tens ID: %d. \n", user_name, user_id);
+                        write(STDOUT_FILENO, cadena, strlen(cadena));
+                        printF("Ara estàs connectat a Atreides.\n");
 
-                } else if (frame_received.type == 'E') {
-                    printF("Error a l'hora de fer el login. \n");
+                    } else if (frame_received.type == 'E') {
+                        printF("Error a l'hora de fer el login. \n");
+                    }
+                } else {
+                    printF("No puc fer login, sembla que Atreides està aturat...\n");
+
+                    //Reiniciem el socket a 0
+                    socket_fd = 0;
                 }
-
                 free(frame);
-            } else {
-
-                printF("Ja has fet login, estàs connectat a Atreides. \n");
-
+                
+            } else if (socket_fd > 0){
+                printF("No puc fer login si ja estic connectat al servidor amb un altre usuari...\n");
             }
 
         } else if (strcmp(command_lower, "search") == 0) {
@@ -552,7 +557,11 @@ int FREMEN_promptChoice(Config configuration) {
             //Implementar fase 3
         }
 
+        command = NULL;
+        command_lower = NULL;
+        command_array = NULL;
         FREMEN_freeMemory(command, command_lower, command_array);
+        
         return 1;
         //Comando custom KO, por parametros
     } else if (isok == 1) {
