@@ -16,6 +16,8 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
+#include "frame_config.h"
+
 //Define
 #define printF(x) write(1, x, strlen(x))
 
@@ -24,13 +26,13 @@ typedef struct {
     char *ip;
     int port;
     char *directory;
-} Config;
-
+} ConfigFremen;
+/*
 typedef struct {
     char origin[15];
     char type;
     char data[240];
 } Frame;
-
+*/
 
 #endif //_FREMEN_H

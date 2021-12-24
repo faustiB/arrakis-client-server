@@ -18,13 +18,15 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
+#include "frame_config.h"
+
 #define printF(x) write(1, x, strlen(x))
 
 typedef struct {
     char *ip;
     int port;
     char *directory;
-} Config;
+} ConfigAtreides;
 
 typedef struct {
     int id;
@@ -33,12 +35,12 @@ typedef struct {
     int file_descriptor;
     pthread_t thread;
 } User;
-
+/*
 typedef struct {
     char origin[15];
     char type;
     char data[240];
 } Frame;
-
+*/
 
 #endif //_ATREIDES_H

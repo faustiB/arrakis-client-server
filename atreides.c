@@ -1,8 +1,10 @@
+
 #include "atreides.h"
+#include "ioscreen.h"
 
 void RsiControlC(void);
 
-Config configuration;
+ConfigAtreides configuration;
 int num_users, socket_fd;
 User * users;
 
@@ -71,78 +73,6 @@ void RsiControlC(void) {
 
 /* ********************************************************************
  *
- * @Nombre : ATREIDES_read_until
- * @Def : Función para leer una linea
- *
- ********************************************************************* */
-char * ATREIDES_read_until(int fd, char end) {
-    int i = 0, size;
-    char c = '\0';
-    char * string = (char * ) malloc(sizeof(char));
-
-    while (1) {
-        size = read(fd, & c, sizeof(char));
-
-        if (c != end && size > 0) {
-            string = (char * ) realloc(string, sizeof(char) * (i + 2));
-            string[i++] = c;
-        } else {
-            break;
-        }
-    }
-
-    string[i] = '\0';
-    return string;
-}
-
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_readUntilIntro
- * @Def : Función para leer hasta un intro.
- *
- ********************************************************************* */
-char * ATREIDES_readUntilIntro(int fd, char caracter, int i) {
-    char * buffer = (char * ) malloc(1 * sizeof(char));
-
-    while (caracter != '\n' || i == 0) {
-
-        read(fd, & caracter, sizeof(char));
-        buffer = (char * ) realloc(buffer, i + 1);
-        buffer[i] = caracter;
-
-        if (caracter == '\n' || caracter == '\0') {
-            buffer[i] = '\0';
-            return buffer;
-        }
-
-        i++;
-    }
-
-    return buffer;
-}
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_generateFrame
- * @Def : ceación de una trama de Atreides
- *
- ********************************************************************* */
-char * ATREIDES_generateFrame() {
-    char * frame;
-    int i = 0;
-
-    frame = (char * ) malloc(sizeof(char) * 256);
-
-    sprintf((char * ) frame, "ATREIDES");
-
-    for (i = strlen((char * ) frame); i < 15; i++) {
-        frame[i] = '\0';
-    }
-
-    return frame;
-}
-
-/* ********************************************************************
- *
  * @Nombre : ATREIDES_generateFrameLogin
  * @Def : ceación y generación de la trama de respuesta para login.
  *
@@ -190,7 +120,7 @@ char * ATREIDES_generateFrameSearch(char * frame, char type, char * str) {
     for (j = i; j < 256; j++) {
         frame[j] = '\0';
     }
-
+    
     //free(str);
     return frame;
 
@@ -208,14 +138,14 @@ User * ATREIDES_fillUsers() {
     User * users_read;
 
     //Apertura del fichero
-    //fd = open("Atreides/users_memory.txt", O_RDONLY);
-    fd = open("Atreides/users_memory2.txt", O_RDONLY);
+    fd = open("Atreides/users_memory.txt", O_RDONLY);
+    //fd = open("Atreides/users_memory2.txt", O_RDONLY);
 
     if (fd < 0) {
         //printF("Fitxer de usuaris erroni\n");
 
-        //fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR , 0666);
-        fd = open("Atreides/users_memory2.txt", O_CREAT | O_RDWR , 0666);
+        fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR , 0666);
+        //fd = open("Atreides/users_memory2.txt", O_CREAT | O_RDWR , 0666);
         if(fd < 0){
 
             printF("Error creant fitxer\n");
@@ -230,7 +160,7 @@ User * ATREIDES_fillUsers() {
 
     }
 
-    buffer = ATREIDES_readUntilIntro(fd, caracter, i);
+    buffer = IOSCREEN_readUntilIntro(fd, caracter, i);
     num_users = atoi(buffer);
     users_read = (User * ) malloc(sizeof(User) * num_users);
     free(buffer);
@@ -239,12 +169,12 @@ User * ATREIDES_fillUsers() {
     while (i < num_users) {
 
         buffer = NULL;
-        buffer = ATREIDES_read_until(fd, '-');
+        buffer = IOSCREEN_read_until(fd, '-');
         users_read[i].id = atoi(buffer);
 
-        users_read[i].username = ATREIDES_read_until(fd, '-');
+        users_read[i].username = IOSCREEN_read_until(fd, '-');
 
-        users_read[i].postal_code = ATREIDES_read_until(fd, '\n');
+        users_read[i].postal_code = IOSCREEN_read_until(fd, '\n');
         users_read[i].file_descriptor = -1;
 
         free(buffer);
@@ -376,35 +306,6 @@ void ATREIDES_sendFrame(int fd, char * frame) {
     write(fd, frame, 256);
     printF("Enviada resposta\n");
 }
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_receiveFrame
- * @Def : Rececpción de trama
- *
- ********************************************************************* */
-Frame ATREIDES_receiveFrame(int fd) {
-    int i;
-    char frame_read[256];
-    Frame frame;
-
-    read(fd, frame_read, sizeof(char) * 256);
-
-    i = 0;
-    while (i < 15) {
-        frame.origin[i] = frame_read[i];
-        i++;
-    }
-
-    frame.type = frame_read[15];
-
-    i = 16;
-    while (i < 256) {
-        frame.data[i - 16] = frame_read[i];
-        i++;
-    }
-
-    return frame;
-}
 
 /* ********************************************************************
  *
@@ -460,7 +361,7 @@ void * ATREIDES_threadClient(void * fdClient) {
     exit = 0;
     while (!exit) {
 
-        frame = ATREIDES_receiveFrame(fd);
+        frame = FRAME_CONFIG_receiveFrame(fd);
 
         //mirar tipo y casuística.
         switch (frame.type) {
@@ -490,7 +391,7 @@ void * ATREIDES_threadClient(void * fdClient) {
             sprintf(cadena, "\nRebut Login de %s %s\nAssignat a ID %d.\n", u.username, u.postal_code, u.id);
             write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
 
-            frame_send = ATREIDES_generateFrame();
+            frame_send = FRAME_CONFIG_generateFrame(2);
             frame_send = ATREIDES_generateFrameLogin(frame_send, 'O', u.id);
 
             ATREIDES_sendFrame(fd, frame_send);
@@ -509,8 +410,10 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             search_data = ATREIDES_searchUsers(u);
 
-            frame_send = ATREIDES_generateFrame();
+            frame_send = FRAME_CONFIG_generateFrame(2);
             frame_send = ATREIDES_generateFrameSearch(frame_send, 'S', search_data);
+            
+            printf("\nSEARCH DATA: %s", frame_send);
 
             ATREIDES_sendFrame(fd, frame_send);
 
@@ -546,38 +449,14 @@ void * ATREIDES_threadClient(void * fdClient) {
 
 /* ********************************************************************
  *
- * @Nombre : ATREIDES_readDelimiter
- * @Def : Función para leer una linea
- *
- ********************************************************************* */
-char * ATREIDES_readDelimiter(int fd, char delimiter) {
-
-    char * msg = malloc(1);
-    char current;
-    int i = 0;
-    int len = 0;
-    while ((len += read(fd, & current, 1)) > 0) {
-
-        msg[i] = current;
-        msg = (char * ) realloc(msg, ++i + 1);
-        if (current == delimiter)
-            break;
-    }
-    msg[i - 1] = '\0';
-
-    return msg;
-}
-
-/* ********************************************************************
- *
  * @Nombre : ATREIDES_fillConfiguration
  * @Def : Función para leer el fichero de configuración, y devolverlo en nuestro struct.
  *
  ********************************************************************* */
-Config ATREIDES_fillConfiguration(char * argv) {
+ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
     char caracter = ' ', * cadena = NULL;
     int i = 0, fd;
-    Config c;
+    ConfigAtreides c;
 
     //Apertura del fichero
     fd = open(argv, O_RDONLY);
@@ -587,12 +466,12 @@ Config ATREIDES_fillConfiguration(char * argv) {
         raise(SIGINT);
 
     } else {
-        c.ip = ATREIDES_readUntilIntro(fd, caracter, i);
-        cadena = ATREIDES_readUntilIntro(fd, caracter, i);
+        c.ip = IOSCREEN_readUntilIntro(fd, caracter, i);
+        cadena = IOSCREEN_readUntilIntro(fd, caracter, i);
         c.port = atoi(cadena);
         free(cadena);
 
-        c.directory = ATREIDES_readUntilIntro(fd, caracter, i);
+        c.directory = IOSCREEN_readUntilIntro(fd, caracter, i);
         close(fd);
         printF("Llegit el fitxer de configuració\n");
     }
@@ -608,7 +487,7 @@ Config ATREIDES_fillConfiguration(char * argv) {
  *
  ********************************************************************* */
 
-int ATREIDES_configSocket(Config config) {
+int ATREIDES_configSocket(ConfigAtreides config) {
 
     struct sockaddr_in s_addr; //cliente_addr;
     int fdSocket = -1;

@@ -1,7 +1,10 @@
+
 #include "fremen.h"
+#include "ioscreen.h"
+
 
 void RsiControlC(void);
-Config configuration;
+ConfigFremen configuration;
 int socket_fd, user_id, control_login;
 char * user_name;
 
@@ -33,38 +36,14 @@ void RsiControlC(void) {
 
 /* ********************************************************************
  *
- * @Nombre : FREMEN_readUntilIntro
- * @Def : Función para leer hasta un intro.
- *
- ********************************************************************* */
-char * FREMEN_readUntilIntro(int fd, char caracter, int i) {
-    char * buffer = (char * ) malloc(1 * sizeof(char));
-
-    while (caracter != '\n' || i == 0) {
-        read(fd, & caracter, sizeof(char));
-        buffer = (char * ) realloc(buffer, i + 1);
-        buffer[i] = caracter;
-
-        if (caracter == '\n' || caracter == '\0') {
-            buffer[i] = '\0';
-            return buffer;
-        }
-        i++;
-    }
-
-    return buffer;
-}
-
-/* ********************************************************************
- *
  * @Nombre : FREMEN_fillConfiguration
  * @Def : Función para leer el fichero de configuración, y devolverlo en nuestro struct.
  *
  ********************************************************************* */
-Config FREMEN_fillConfiguration(char * argv) {
+ConfigFremen FREMEN_fillConfiguration(char * argv) {
     char caracter = ' ', * cadena = NULL;
     int i = 0, fd;
-    Config c;
+    ConfigFremen c;
 
     //Apertura del fichero
     fd = open(argv, O_RDONLY);
@@ -74,17 +53,17 @@ Config FREMEN_fillConfiguration(char * argv) {
         raise(SIGINT);
 
     } else {
-        cadena = FREMEN_readUntilIntro(fd, caracter, i);
+        cadena = IOSCREEN_readUntilIntro(fd, caracter, i);
         c.seconds_to_clean = atoi(cadena);
         free(cadena);
 
-        c.ip = FREMEN_readUntilIntro(fd, caracter, i);
+        c.ip = IOSCREEN_readUntilIntro(fd, caracter, i);
 
-        cadena = FREMEN_readUntilIntro(fd, caracter, i);
+        cadena = IOSCREEN_readUntilIntro(fd, caracter, i);
         c.port = atoi(cadena);
         free(cadena);
 
-        c.directory = FREMEN_readUntilIntro(fd, caracter, i);
+        c.directory = IOSCREEN_readUntilIntro(fd, caracter, i);
         close(fd);
     }
 
@@ -176,7 +155,7 @@ int FREMEN_checkNumberOfWords(char * command, int words) {
  *
  ********************************************************************* */
 
-int configSocket(Config config, char * command, char * command_lower, char ** command_array) {
+int configSocket(ConfigFremen config, char * command, char * command_lower, char ** command_array) {
 
     struct sockaddr_in s_addr;
     int socket_fd;
@@ -210,7 +189,7 @@ int configSocket(Config config, char * command, char * command_lower, char ** co
  *
  ********************************************************************* */
 
-void FREMEN_login(Config configuration, char * command, char * command_lower, char ** command_array) {
+void FREMEN_login(ConfigFremen configuration, char * command, char * command_lower, char ** command_array) {
     socket_fd = configSocket(configuration, command, command_lower, command_array);
     if (socket_fd < 1) {
         printF("ERROR: no se ha podido conectar el socket\n");
@@ -225,27 +204,6 @@ void FREMEN_login(Config configuration, char * command, char * command_lower, ch
  ********************************************************************* */
 void FREMEN_sendFrame(int fd, char * frame) {
     write(fd, frame, 256);
-}
-
-/* ********************************************************************
- *
- * @Nombre : FREMEN_generateFrame
- * @Def : ceación de una trama de Fremen
- *
- ********************************************************************* */
-char * FREMEN_generateFrame() {
-    char * frame;
-    int i = 0;
-
-    frame = (char * ) malloc(sizeof(char) * 256);
-
-    sprintf(frame, "FREMEN");
-
-    for (i = strlen(frame); i < 15; i++) {
-        frame[i] = '\0';
-    }
-
-    return frame;
 }
 
 /* ********************************************************************
@@ -335,36 +293,6 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
 
 /* ********************************************************************
  *
- * @Nombre : ATREIDES_receiveFrame
- * @Def : Rececpción de trama
- *
- ********************************************************************* */
-Frame FREMEN_receiveFrame(int fd) {
-    int i;
-    char frame_read[256];
-    Frame frame;
-
-    read(fd, frame_read, sizeof(char) * 256);
-
-    i = 0;
-    while (i < 15) {
-        frame.origin[i] = frame_read[i];
-        i++;
-    }
-
-    frame.type = frame_read[15];
-
-    i = 16;
-    while (i < 256) {
-        frame.data[i - 16] = frame_read[i];
-        i++;
-    }
-
-    return frame;
-}
-
-/* ********************************************************************
- *
  * @Nombre : FREMEN_showSearchReceived
  * @Def : Función para tratar el comando que se introduce
  *
@@ -434,14 +362,14 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
  * @Def : Función para tratar el comando que se introduce
  *
  ********************************************************************* */
-int FREMEN_promptChoice(Config configuration) {
+int FREMEN_promptChoice(ConfigFremen configuration) {
     char * command = NULL, * command_lower = NULL, * frame = NULL, cadena[200];
     char * ( * command_array);
     int i = 0, num_of_words = 0, isok = 0;
 
     //Lectura por pantalla del comando y tratado para quedarnos con una cadena
     printF("$ ");
-    command = FREMEN_readUntilIntro(STDIN_FILENO, '\n', 0);
+    command = IOSCREEN_readUntilIntro(STDIN_FILENO, '\n', 0);
 
     //Intro vacío
     if (command[0] == '\0') {
@@ -475,7 +403,7 @@ int FREMEN_promptChoice(Config configuration) {
         if (strcmp(command_lower, "logout") == 0) {
             if (socket_fd > 0) {
 
-                frame = FREMEN_generateFrame();
+                frame = FRAME_CONFIG_generateFrame(1);
                 frame = FREMEN_generateFrameLogout(frame, 'Q');
                 FREMEN_sendFrame(socket_fd, frame);
 
@@ -494,7 +422,7 @@ int FREMEN_promptChoice(Config configuration) {
 
                 frame = NULL;
 
-                frame = FREMEN_generateFrame();
+                frame = FRAME_CONFIG_generateFrame(1);
                 FREMEN_login(configuration, command, command_lower, command_array);
 
                 if (socket_fd > 0) {
@@ -506,7 +434,7 @@ int FREMEN_promptChoice(Config configuration) {
 
                     Frame frame_received;
 
-                    frame_received = FREMEN_receiveFrame(socket_fd);
+                    frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
                     if (frame_received.type == 'O') {
                         control_login = 1;
@@ -538,11 +466,11 @@ int FREMEN_promptChoice(Config configuration) {
             if (socket_fd > 0) {
                 frame = NULL;
 
-                frame = FREMEN_generateFrame();
+                frame = FRAME_CONFIG_generateFrame(1);
                 frame = FREMEN_generateFrameSearch(frame, 'S', command_array[1]);
                 FREMEN_sendFrame(socket_fd, frame);
                 Frame frame_received;
-                frame_received = FREMEN_receiveFrame(socket_fd);
+                frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
                 FREMEN_showSearchReceived(frame_received.data, command_array[1]);
 
