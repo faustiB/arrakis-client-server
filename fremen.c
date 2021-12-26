@@ -388,14 +388,12 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
     }
 
     //Tratamiento pasar cadena a minúscula
-    //command_lower = strdup(command);
     command_lower = strdup(command_array[0]);
     for (size_t i = 0; command_lower[i] != '\0'; ++i) {
         command_lower[i] = tolower((unsigned char) command_lower[i]);
     }
 
     //Checkeo del número de parametros.
-    //isok = FREMEN_checkNumberOfWords(command_array[0], num_of_words);
     isok = FREMEN_checkNumberOfWords(command_lower, num_of_words);
 
     //Comando custom OK
@@ -412,6 +410,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 socket_fd = 0;
 
                 printF("\nDesconnectat d’Atreides. Dew!\n\n");
+                FREMEN_freeMemory(command, command_lower, command_array);
 
             } else {
                 printF("No puc fer logout si no estic connectat al servidor...\n");

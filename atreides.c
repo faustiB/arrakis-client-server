@@ -200,8 +200,11 @@ void ATREIDES_addUser(User u) {
     users[num_users-1].postal_code = (char * ) malloc(sizeof(u.postal_code));
 
     users[num_users-1].id = u.id;
+    printf("\nPROBLEMA 0\n");
     strcpy(users[num_users-1].username, u.username);
+    printf("\nPROBLEMA 1\n");
     strcpy(users[num_users-1].postal_code, u.postal_code);
+    printf("\nPROBLEMA 2\n");
     users[num_users-1].file_descriptor = u.file_descriptor;
     users[num_users-1].thread = u.thread;
 }
@@ -324,7 +327,6 @@ char * ATREIDES_searchUsers(User u) {
     for (i = 0; i < num_users; i++) {
         if (strcmp(users[i].postal_code, u.postal_code) == 0) {
             num_users_pc++;
-
         }
     }
 
@@ -333,10 +335,8 @@ char * ATREIDES_searchUsers(User u) {
 
     for (i = 0; i < num_users; i++) {
         if (strcmp(users[i].postal_code, u.postal_code) == 0) {
-
             snprintf(id_str, 3, "%d", users[i].id);
             asprintf( & res, "%s*%s*%s", res, users[i].username, id_str);
-
         }
     }
 
@@ -412,8 +412,6 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             frame_send = FRAME_CONFIG_generateFrame(2);
             frame_send = ATREIDES_generateFrameSearch(frame_send, 'S', search_data);
-            
-            printf("\nSEARCH DATA: %s", frame_send);
 
             ATREIDES_sendFrame(fd, frame_send);
 
