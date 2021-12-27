@@ -139,13 +139,11 @@ User * ATREIDES_fillUsers() {
 
     //Apertura del fichero
     fd = open("Atreides/users_memory.txt", O_RDONLY);
-    //fd = open("Atreides/users_memory2.txt", O_RDONLY);
 
     if (fd < 0) {
         //printF("Fitxer de usuaris erroni\n");
 
         fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR , 0666);
-        //fd = open("Atreides/users_memory2.txt", O_CREAT | O_RDWR , 0666);
         if(fd < 0){
 
             printF("Error creant fitxer\n");
@@ -353,6 +351,7 @@ char * ATREIDES_searchUsers(User u) {
 void * ATREIDES_threadClient(void * fdClient) {
 
     int fd = * ((int * ) fdClient);
+
     Frame frame;
     int i, exit;
     User u;
@@ -424,7 +423,6 @@ void * ATREIDES_threadClient(void * fdClient) {
         case 'Q':
             exit = 1;
 
-            //Li passem el file descriptor com a -1 per a que no el tanqui de nou després.
             u = ATREIDES_receiveUser(frame.data);
             
             sprintf(cadena, "\nRebut Logout de  %s %s \nDesconnectat d'Atreides.\n", u.username, u.postal_code);
@@ -435,14 +433,12 @@ void * ATREIDES_threadClient(void * fdClient) {
 
     }
 
-    close(fd);
-
     //guardarem el pid del thread per a dins de la rsi, poder tancar-lo. Afegir valor al user.
     pthread_detach(pthread_self());
     pthread_cancel(pthread_self());
+    close(fd);
 
     return NULL;
-
 }
 
 /* ********************************************************************

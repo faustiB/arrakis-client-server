@@ -10,6 +10,42 @@ char * user_name;
 
 /* ********************************************************************
  *
+ * @Nombre : FREMEN_sendFrame
+ * @Def : Envío de la trama
+ *
+ ********************************************************************* */
+void FREMEN_sendFrame(int fd, char * frame) {
+    write(fd, frame, 256);
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : FREMEN_generateFrameLogout
+ * @Def : ceación y generación de la trama para logout.
+ *
+ ********************************************************************* */
+char * FREMEN_generateFrameLogout(char * frame, char type) {
+    int i = 0, j = 0;
+    char * buffer, id_str[3];
+    frame[15] = type;
+
+    snprintf(id_str, 3, "%d", user_id);
+    asprintf( & buffer, "%s*%s", user_name, id_str);
+
+    for (i = 16; buffer[i - 16] != '\0'; i++) {
+        frame[i] = buffer[i - 16];
+    }
+
+    for (j = i; j < 256; j++) {
+        frame[j] = '\0';
+    }
+
+    free(buffer);
+    return frame;
+}
+
+/* ********************************************************************
+ *
  * @Nombre : RsiControlC
  * @Def : Rutina asociada a la interrupción Control+C.
  *
@@ -21,12 +57,25 @@ void RsiControlC(void) {
 
     free(configuration.ip);
     free(configuration.directory);
-    free(user_name);
+
+
+    if (socket_fd > 0) {
+        char * frame;
+        
+        frame = FRAME_CONFIG_generateFrame(1);
+        frame = FREMEN_generateFrameLogout(frame, 'Q');
+        FREMEN_sendFrame(socket_fd, frame);
+
+        free(frame);
+
+        printF("\nDesconnectat d’Atreides. Dew!\n\n");
+    }
     
     if (socket_fd == -1) {
         socket_fd = 0;
     }
 
+    free(user_name);
     close(socket_fd);
 
     //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
@@ -198,16 +247,6 @@ void FREMEN_login(ConfigFremen configuration, char * command, char * command_low
 
 /* ********************************************************************
  *
- * @Nombre : FREMEN_sendFrame
- * @Def : Envío de la trama
- *
- ********************************************************************* */
-void FREMEN_sendFrame(int fd, char * frame) {
-    write(fd, frame, 256);
-}
-
-/* ********************************************************************
- *
  * @Nombre : FREMEN_generateFrameLogin
  * @Def : ceación y generación de la tramapara login.
  *
@@ -220,34 +259,6 @@ char * FREMEN_generateFrameLogin(char * frame, char type, char * name, char * zi
     frame[15] = type;
 
     asprintf( & buffer, "%s*%s", name, zipCode);
-
-    for (i = 16; buffer[i - 16] != '\0'; i++) {
-        frame[i] = buffer[i - 16];
-    }
-
-    for (j = i; j < 256; j++) {
-        frame[j] = '\0';
-    }
-
-    free(buffer);
-    return frame;
-}
-
-/* ********************************************************************
- *
- * @Nombre : FREMEN_generateFrameLogout
- * @Def : ceación y generación de la trama para logout.
- *
- ********************************************************************* */
-char * FREMEN_generateFrameLogout(char * frame, char type) {
-    int i = 0, j = 0;
-
-    char * buffer, id_str[3];
-    frame[15] = type;
-
-    snprintf(id_str, 3, "%d", user_id);
-
-    asprintf( & buffer, "%s*%s", user_name, id_str);
 
     for (i = 16; buffer[i - 16] != '\0'; i++) {
         frame[i] = buffer[i - 16];
@@ -301,59 +312,64 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
 void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
     int i, k, num_searched_users = 0;
-    char * num_searched_users_str, * name, * id_user, cadena[100];
+    char * num_searched_users_str = NULL, * name, * id_user, cadena[100];
 
     i = 0;
-    num_searched_users_str = (char * ) malloc(1 * sizeof(char));
-    while (data[i] != '*') {
-        num_searched_users_str[i] = data[i];
-        num_searched_users_str = (char * ) realloc(num_searched_users_str, i + 2);
-        i++;
-    }
-    num_searched_users_str[i] = '\0';
-    num_searched_users = atoi(num_searched_users_str);
 
-    i++;
-
-    sprintf(cadena, "\nHi ha %s persones humanes a %s\n", num_searched_users_str, postal_code);
-    write(STDOUT_FILENO, cadena, strlen(cadena));
-
-    for (int j = 0; j < num_searched_users; j++) {
-        k = 0;
-        name = (char * ) malloc(1 * sizeof(char));
-
+    if (strlen(data) > 1) {
+        num_searched_users_str = (char * ) malloc(1 * sizeof(char));
         while (data[i] != '*') {
-            name[k] = data[i];
-            name = (char * ) realloc(name, k + 2);
+            num_searched_users_str[i] = data[i];
+            num_searched_users_str = (char * ) realloc(num_searched_users_str, i + 2);
             i++;
-            k++;
         }
-
-        name[k] = '\0';
-        i++;
-
-        id_user = (char * ) malloc(1 * sizeof(char));
-        k = 0;
-
-        while (data[i] != '*' && data[i] != '\0') {
-            id_user[k] = data[i];
-            id_user = (char * ) realloc(id_user, k + 2);
-            i++;
-            k++;
-        }
-        id_user[k] = '\0';
+        num_searched_users_str[i] = '\0';
+        num_searched_users = atoi(num_searched_users_str);
 
         i++;
 
-        sprintf(cadena, "%s %s\n", id_user, name);
+        sprintf(cadena, "\nHi ha %s persones humanes a %s\n", num_searched_users_str, postal_code);
         write(STDOUT_FILENO, cadena, strlen(cadena));
 
-        free(name);
-        free(id_user);
+        for (int j = 0; j < num_searched_users; j++) {
+            k = 0;
+            name = (char * ) malloc(1 * sizeof(char));
+
+            while (data[i] != '*') {
+                name[k] = data[i];
+                name = (char * ) realloc(name, k + 2);
+                i++;
+                k++;
+            }
+
+            name[k] = '\0';
+            i++;
+
+            id_user = (char * ) malloc(1 * sizeof(char));
+            k = 0;
+
+            while (data[i] != '*' && data[i] != '\0') {
+                id_user[k] = data[i];
+                id_user = (char * ) realloc(id_user, k + 2);
+                i++;
+                k++;
+            }
+            id_user[k] = '\0';
+
+            i++;
+
+            sprintf(cadena, "%s %s\n", id_user, name);
+            write(STDOUT_FILENO, cadena, strlen(cadena));
+
+            free(name);
+            free(id_user);
+        }
+    } else {
+        sprintf(cadena, "\nHi ha zero persones humanes a %s\n", postal_code);
+        write(STDOUT_FILENO, cadena, strlen(cadena));
     }
 
     free(num_searched_users_str);
-
 }
 
 /* ********************************************************************
@@ -370,6 +386,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
     //Lectura por pantalla del comando y tratado para quedarnos con una cadena
     printF("$ ");
     command = IOSCREEN_readUntilIntro(STDIN_FILENO, '\n', 0);
+    //command = IOSCREEN_readDelimiter(STDIN_FILENO, '\n');
 
     //Intro vacío
     if (command[0] == '\0') {
@@ -449,6 +466,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                     } else if (frame_received.type == 'E') {
                         printF("Error a l'hora de fer el login. \n");
                     }
+                    FREMEN_freeMemory(command, command_lower, command_array);
                 } else {
                     printF("No puc fer login, sembla que Atreides està aturat...\n");
 
