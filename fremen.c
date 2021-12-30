@@ -61,7 +61,7 @@ void RsiControlC(void) {
 
     if (socket_fd > 0) {
         char * frame;
-        
+
         frame = FRAME_CONFIG_generateFrame(1);
         frame = FREMEN_generateFrameLogout(frame, 'Q');
         FREMEN_sendFrame(socket_fd, frame);
@@ -70,7 +70,7 @@ void RsiControlC(void) {
 
         printF("\nDesconnectat d’Atreides. Dew!\n\n");
     }
-    
+
     if (socket_fd == -1) {
         socket_fd = 0;
     }
@@ -474,7 +474,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                     socket_fd = 0;
                 }
                 free(frame);
-                
+
             } else if (socket_fd > 0){
                 printF("No puc fer login si ja estic connectat al servidor amb un altre usuari...\n");
             }
@@ -506,7 +506,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
         command_lower = NULL;
         command_array = NULL;
         FREMEN_freeMemory(command, command_lower, command_array);
-        
+
         return 1;
         //Comando custom KO, por parametros
     } else if (isok == 1) {
@@ -530,7 +530,10 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             if (execvp(command_array[0], command_array) < 0) {
                 FREMEN_freeMemory(command, command_lower, command_array);
                 free(frame);
+                free(configuration.ip);
+                free(configuration.directory);
                 printF("Error al executar la comanda!\n");
+                exit(EXIT_FAILURE);
             }
             //Código del padre
         } else {
