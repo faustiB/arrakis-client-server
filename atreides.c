@@ -198,11 +198,8 @@ void ATREIDES_addUser(User u) {
     users[num_users-1].postal_code = (char * ) malloc(sizeof(u.postal_code));
 
     users[num_users-1].id = u.id;
-    printf("\nPROBLEMA 0\n");
     strcpy(users[num_users-1].username, u.username);
-    printf("\nPROBLEMA 1\n");
     strcpy(users[num_users-1].postal_code, u.postal_code);
-    printf("\nPROBLEMA 2\n");
     users[num_users-1].file_descriptor = u.file_descriptor;
     users[num_users-1].thread = u.thread;
 }
@@ -320,7 +317,7 @@ char * ATREIDES_searchUsers(User u) {
     // creem un altre string per passar.
 
     int num_users_pc = 0, i;
-    char * res, num_users_pc_str[3], id_str[3];
+    char * res = NULL, num_users_pc_str[3], id_str[3];
 
     for (i = 0; i < num_users; i++) {
         if (strcmp(users[i].postal_code, u.postal_code) == 0) {
