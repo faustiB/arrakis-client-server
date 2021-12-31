@@ -73,3 +73,18 @@ char * IOSCREEN_read_until(int fd, char end) {
     string[i] = '\0';
     return string;
 }
+
+/* ********************************************************************
+ *
+ * @Nombre : IOSCREEN_isEmpty
+ * @Def : Función revisar si un string es todo espacios vacios.
+ *
+ ********************************************************************* */
+int IOSCREEN_isEmpty(const char *string) {
+    while (*string != '\0') {
+        if (!isspace((unsigned char)*string))
+            return 0;
+        string++;
+    }
+    return 1;
+}

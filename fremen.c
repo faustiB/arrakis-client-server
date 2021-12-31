@@ -386,10 +386,15 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
     //Lectura por pantalla del comando y tratado para quedarnos con una cadena
     printF("$ ");
     command = IOSCREEN_readUntilIntro(STDIN_FILENO, '\n', 0);
-    //command = IOSCREEN_readDelimiter(STDIN_FILENO, '\n');
 
     //Intro vacío
     if (command[0] == '\0') {
+        free(command);
+        return 0;
+    }
+
+    //Cadena de espacios
+    if (IOSCREEN_isEmpty(command) == 1) {
         free(command);
         return 0;
     }
