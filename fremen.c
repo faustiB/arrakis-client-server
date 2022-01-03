@@ -199,12 +199,12 @@ int FREMEN_checkNumberOfWords(char * command, int words) {
 
 /* ********************************************************************
  *
- * @Nombre : configSocket
+ * @Nombre : FREMEN_configSocket
  * @Def : Preparación conexión atreides.
  *
  ********************************************************************* */
 
-int configSocket(ConfigFremen config, char * command, char * command_lower, char ** command_array) {
+int FREMEN_configSocket(ConfigFremen config, char * command, char * command_lower, char ** command_array) {
 
     struct sockaddr_in s_addr;
     int socket_fd;
@@ -239,7 +239,7 @@ int configSocket(ConfigFremen config, char * command, char * command_lower, char
  ********************************************************************* */
 
 void FREMEN_login(ConfigFremen configuration, char * command, char * command_lower, char ** command_array) {
-    socket_fd = configSocket(configuration, command, command_lower, command_array);
+    socket_fd = FREMEN_configSocket(configuration, command, command_lower, command_array);
     if (socket_fd < 1) {
         printF("ERROR: no se ha podido conectar el socket\n");
     }
@@ -312,7 +312,7 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
 void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
     int i, k, num_searched_users = 0;
-    char * num_searched_users_str = NULL, * name, * id_user, cadena[100];
+    char * num_searched_users_str = NULL, * name = NULL, * id_user = NULL, cadena[100];
 
     i = 0;
 
@@ -363,10 +363,14 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
             free(name);
             free(id_user);
+            free(postal_code);
         }
     } else {
         sprintf(cadena, "\nHi ha zero persones humanes a %s\n", postal_code);
         write(STDOUT_FILENO, cadena, strlen(cadena));
+        free(name);
+        free(id_user);
+        free(postal_code);
     }
 
     free(num_searched_users_str);
@@ -466,6 +470,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
                         sprintf(cadena, "Benvingut %s. Tens ID: %d. \n", user_name, user_id);
                         write(STDOUT_FILENO, cadena, strlen(cadena));
+
                         printF("Ara estàs connectat a Atreides.\n");
 
                     } else if (frame_received.type == 'E') {
@@ -533,10 +538,16 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
         else if (pid == 0) {
             //Ejecución del comando +  tratamiento si ha ido mal
             if (execvp(command_array[0], command_array) < 0) {
+
+                //user_name = NULL;
+                free(user_name);
+
                 FREMEN_freeMemory(command, command_lower, command_array);
                 free(frame);
                 free(configuration.ip);
                 free(configuration.directory);
+                close(socket_fd);
+
                 printF("Error al executar la comanda!\n");
                 exit(EXIT_FAILURE);
             }

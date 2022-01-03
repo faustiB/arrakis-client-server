@@ -27,12 +27,5 @@ typedef struct {
     int port;
     char *directory;
 } ConfigFremen;
-/*
-typedef struct {
-    char origin[15];
-    char type;
-    char data[240];
-} Frame;
-*/
 
 #endif //_FREMEN_H

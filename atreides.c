@@ -231,7 +231,7 @@ User ATREIDES_receiveUser(char data[240]) {
 
     while (data[i] != '\0') {
         u.postal_code[j] = data[i];
-        u.postal_code = (char * ) realloc(u.postal_code, i + 2);
+        u.postal_code = (char * ) realloc(u.postal_code, j + 2);
         i++;
         j++;
     }
@@ -365,7 +365,7 @@ void * ATREIDES_threadClient(void * fdClient) {
             //Login
             u = ATREIDES_receiveUser(frame.data);
 
-            //assignem el filedescriptor obert per tancarlo al final
+            //assignem el file descriptor obert per tancarlo al final
             u.file_descriptor = fd;
             u.thread = pthread_self();
 
@@ -379,6 +379,7 @@ void * ATREIDES_threadClient(void * fdClient) {
             }
 
             if (u.id == 0) {
+                //Semaforo para sumar uno a la vez
                 num_users++;
                 u.id = num_users;
                 ATREIDES_addUser(u);
@@ -387,13 +388,14 @@ void * ATREIDES_threadClient(void * fdClient) {
             sprintf(cadena, "\nRebut Login de %s %s\nAssignat a ID %d.\n", u.username, u.postal_code, u.id);
             write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
 
+            free(u.username);
+            free(u.postal_code);
+
             frame_send = FRAME_CONFIG_generateFrame(2);
             frame_send = ATREIDES_generateFrameLogin(frame_send, 'O', u.id);
 
             ATREIDES_sendFrame(fd, frame_send);
 
-            free(u.username);
-            free(u.postal_code);
             free(frame_send);
             break;
 
@@ -425,14 +427,15 @@ void * ATREIDES_threadClient(void * fdClient) {
             sprintf(cadena, "\nRebut Logout de  %s %s \nDesconnectat d'Atreides.\n", u.username, u.postal_code);
             write(STDOUT_FILENO, cadena, strlen(cadena));
 
+            //guardarem el pid del thread per a dins de la rsi, poder tancar-lo. Afegir valor al user.
+            pthread_detach(pthread_self());
+            pthread_cancel(pthread_self());
+
             break;
         }
 
     }
 
-    //guardarem el pid del thread per a dins de la rsi, poder tancar-lo. Afegir valor al user.
-    pthread_detach(pthread_self());
-    pthread_cancel(pthread_self());
     close(fd);
 
     return NULL;

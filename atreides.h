@@ -35,12 +35,5 @@ typedef struct {
     int file_descriptor;
     pthread_t thread;
 } User;
-/*
-typedef struct {
-    char origin[15];
-    char type;
-    char data[240];
-} Frame;
-*/
 
 #endif //_ATREIDES_H

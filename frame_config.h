@@ -8,16 +8,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
-//#include "fremen.h"
-
 
 typedef struct {
     char origin[15];
     char type;
     char data[240];
 } Frame;
-
-
 
 char * FRAME_CONFIG_generateFrame(int origin);
 Frame FRAME_CONFIG_receiveFrame(int fd);
