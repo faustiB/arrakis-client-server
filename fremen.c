@@ -127,9 +127,8 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
  *
  ********************************************************************* */
 
-void FREMEN_freeMemory(char * command, char * command_lower, char ** command_array) {
+void FREMEN_freeMemory(char * command, char ** command_array) {
     free(command);
-    free(command_lower);
     free(command_array);
 }
 
@@ -151,7 +150,7 @@ int FREMEN_checkNumberOfWords(char * command, int words) {
             printF("Comanda KO. Massa paràmetres\n");
         }
         return 1;
-    } else if (strcmp(command, "search") == 0) {
+    } else if (strcasecmp(command, "search") == 0) {
         if (words == 2) {
             //printF("Comanda OK.\n");
             return 0;
@@ -161,7 +160,7 @@ int FREMEN_checkNumberOfWords(char * command, int words) {
             printF("Comanda KO. Massa paràmetres\n");
         }
         return 1;
-    } else if (strcmp(command, "send") == 0) {
+    } else if (strcasecmp(command, "send") == 0) {
         if (words == 2) {
             //printF("Comanda OK.\n");
             return 0;
@@ -171,7 +170,7 @@ int FREMEN_checkNumberOfWords(char * command, int words) {
             printF("Comanda KO. Massa paràmetres\n");
         }
         return 1;
-    } else if (strcmp(command, "photo") == 0) {
+    } else if (strcasecmp(command, "photo") == 0) {
         if (words == 2) {
             //printF("Comanda OK.\n");
             return 0;
@@ -181,7 +180,7 @@ int FREMEN_checkNumberOfWords(char * command, int words) {
             printF("Comanda KO. Massa paràmetres\n");
         }
         return 1;
-    } else if (strcmp(command, "logout") == 0) {
+    } else if (strcasecmp(command, "logout") == 0) {
         if (words == 1) {
             return 0;
         } else if (words < 1) {
@@ -204,7 +203,7 @@ int FREMEN_checkNumberOfWords(char * command, int words) {
  *
  ********************************************************************* */
 
-int FREMEN_configSocket(ConfigFremen config, char * command, char * command_lower, char ** command_array) {
+int FREMEN_configSocket(ConfigFremen config, char * command, char ** command_array) {
 
     struct sockaddr_in s_addr;
     int socket_fd;
@@ -212,7 +211,7 @@ int FREMEN_configSocket(ConfigFremen config, char * command, char * command_lowe
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0) {
         printF("ERROR: crear socket del cliente\n");
-        FREMEN_freeMemory(command, command_lower, command_array);
+        FREMEN_freeMemory(command, command_array);
         raise(SIGINT);
     }
 
@@ -225,7 +224,6 @@ int FREMEN_configSocket(ConfigFremen config, char * command, char * command_lowe
         printF("ERROR: connect del cliente\n");
         close(socket_fd);
         socket_fd = -1;
-        FREMEN_freeMemory(command, command_lower, command_array);
     }
 
     return socket_fd;
@@ -238,8 +236,8 @@ int FREMEN_configSocket(ConfigFremen config, char * command, char * command_lowe
  *
  ********************************************************************* */
 
-void FREMEN_login(ConfigFremen configuration, char * command, char * command_lower, char ** command_array) {
-    socket_fd = FREMEN_configSocket(configuration, command, command_lower, command_array);
+void FREMEN_login(ConfigFremen configuration, char * command, char ** command_array) {
+    socket_fd = FREMEN_configSocket(configuration, command, command_array);
     if (socket_fd < 1) {
         printF("ERROR: no se ha podido conectar el socket\n");
     }
@@ -378,7 +376,7 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
  *
  ********************************************************************* */
 int FREMEN_promptChoice(ConfigFremen configuration) {
-    char * command = NULL, * command_lower = NULL, * frame = NULL, cadena[200];
+    char * command = NULL, * frame = NULL, cadena[200];
     char * ( * command_array);
     int i = 0, num_of_words = 0, isok = 0;
 
@@ -408,18 +406,12 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
         command_array[++i] = strtok(NULL, " ");
     }
 
-    //Tratamiento pasar cadena a minúscula
-    command_lower = strdup(command_array[0]);
-    for (size_t i = 0; command_lower[i] != '\0'; ++i) {
-        command_lower[i] = tolower((unsigned char) command_lower[i]);
-    }
-
     //Checkeo del número de parametros.
-    isok = FREMEN_checkNumberOfWords(command_lower, num_of_words);
+    isok = FREMEN_checkNumberOfWords(command_array[0], num_of_words);
 
     //Comando custom OK
     if (isok == 0) {
-        if (strcmp(command_lower, "logout") == 0) {
+        if (strcasecmp(command_array[0], "logout") == 0) {
             if (socket_fd > 0) {
 
                 frame = FRAME_CONFIG_generateFrame(1);
@@ -427,6 +419,8 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 FREMEN_sendFrame(socket_fd, frame);
 
                 free(frame);
+                //free(user_name);
+                
                 close(socket_fd);
                 socket_fd = 0;
 
@@ -436,13 +430,11 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 printF("No puc fer logout si no estic connectat al servidor...\n");
             }
 
-        } else if (strcmp(command_lower, "login") == 0) {
+        } else if (strcasecmp(command_array[0], "login") == 0) {
             if (socket_fd == 0) {
 
-                //frame = NULL;
-
                 frame = FRAME_CONFIG_generateFrame(1);
-                FREMEN_login(configuration, command, command_lower, command_array);
+                FREMEN_login(configuration, command, command_array);
 
                 if (socket_fd > 0) {
                     frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
@@ -482,7 +474,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 printF("No puc fer login si ja estic connectat al servidor amb un altre usuari...\n");
             }
 
-        } else if (strcmp(command_lower, "search") == 0) {
+        } else if (strcasecmp(command_array[0], "search") == 0) {
             if (socket_fd > 0) {
                 frame = NULL;
 
@@ -500,18 +492,18 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 printF("No es pot buscar perque no esteu loginats al servidor... \n");
             }
 
-        } else if (strcmp(command_lower, "send") == 0) {
+        } else if (strcasecmp(command_array[0], "send") == 0) {
             //Implementar fase 3
-        } else if (strcmp(command_lower, "photo") == 0) {
+        } else if (strcasecmp(command_array[0], "photo") == 0) {
             //Implementar fase 3
         }
 
-        FREMEN_freeMemory(command, command_lower, command_array);
+        FREMEN_freeMemory(command, command_array);
 
         return 1;
         //Comando custom KO, por parametros
     } else if (isok == 1) {
-        FREMEN_freeMemory(command, command_lower, command_array);
+        FREMEN_freeMemory(command, command_array);
         free(frame);
         return 0;
 
@@ -521,7 +513,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
         //Creación del fork
         if ((pid = fork()) < 0) {
-            FREMEN_freeMemory(command, command_lower, command_array);
+            FREMEN_freeMemory(command, command_array);
             printF("Error al crear el Fork\n");
             exit(1);
         }
@@ -530,10 +522,9 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             //Ejecución del comando +  tratamiento si ha ido mal
             if (execvp(command_array[0], command_array) < 0) {
 
-                //user_name = NULL;
                 free(user_name);
 
-                FREMEN_freeMemory(command, command_lower, command_array);
+                FREMEN_freeMemory(command, command_array);
                 free(frame);
                 free(configuration.ip);
                 free(configuration.directory);
@@ -548,7 +539,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             wait(NULL);
 
             //liberacion de memoria
-            FREMEN_freeMemory(command, command_lower, command_array);
+            FREMEN_freeMemory(command, command_array);
         }
         return 0;
     }
@@ -581,7 +572,6 @@ int main(int argc, char ** argv) {
         command = FREMEN_promptChoice(configuration);
     }
 
-    //Exit de fremen con la palabra logout.
     raise(SIGINT);
 
     return 0;
