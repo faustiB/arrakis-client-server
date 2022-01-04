@@ -26,11 +26,10 @@ void FREMEN_sendFrame(int fd, char * frame) {
  ********************************************************************* */
 char * FREMEN_generateFrameLogout(char * frame, char type) {
     int i = 0, j = 0;
-    char * buffer, id_str[3];
+    char * buffer;
     frame[15] = type;
 
-    snprintf(id_str, 3, "%d", user_id);
-    asprintf( & buffer, "%s*%s", user_name, id_str);
+    asprintf( & buffer, "%s*%d", user_name, user_id);
 
     for (i = 16; buffer[i - 16] != '\0'; i++) {
         frame[i] = buffer[i - 16];
@@ -210,7 +209,7 @@ int FREMEN_configSocket(ConfigFremen config, char * command, char ** command_arr
 
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0) {
-        printF("ERROR: crear socket del cliente\n");
+        printF("ERROR: crear socket del client\n");
         FREMEN_freeMemory(command, command_array);
         raise(SIGINT);
     }
@@ -221,7 +220,7 @@ int FREMEN_configSocket(ConfigFremen config, char * command, char ** command_arr
     s_addr.sin_addr.s_addr = inet_addr(config.ip);
 
     if (connect(socket_fd, (void * ) & s_addr, sizeof(s_addr)) < 0) {
-        printF("ERROR: connect del cliente\n");
+        printF("ERROR: connect del client\n");
         close(socket_fd);
         socket_fd = -1;
     }
@@ -279,13 +278,11 @@ char * FREMEN_generateFrameLogin(char * frame, char type, char * name, char * zi
 char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
     int i = 0, j = 0;
 
-    char * buffer, id_str[3];
+    char * buffer;
 
     frame[15] = type;
 
-    snprintf(id_str, 3, "%d", user_id);
-
-    asprintf( & buffer, "%s*%s*%s", user_name, id_str, zipCode);
+    asprintf( & buffer, "%s*%d*%s", user_name, user_id, zipCode);
 
     for (i = 16; buffer[i - 16] != '\0'; i++) {
         frame[i] = buffer[i - 16];
@@ -299,7 +296,12 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
 
     return frame;
 }
-
+/* ********************************************************************
+ *
+ * @Nombre : FREMEN_getMD5
+ * @Def : Obtención md5
+ *
+ ********************************************************************* */
 char * FREMEN_getMD5(char * file) {
     int link[2];
     pid_t pid;
@@ -342,15 +344,14 @@ char * FREMEN_getMD5(char * file) {
  * @Def : ceación y generación de las tramas de send.
  *
  ********************************************************************* */
-void FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
+int FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
     int i = 0, j = 0;
-    char * md5, file_s[15], * temp_frame;
+    char * md5, * data_to_send;
     int photo_fd, file_size;
     struct stat stats;
 
     //buffer[240]
 
-    frame[15] = type;
 
     photo_fd = open(file, O_RDONLY);
 
@@ -363,24 +364,24 @@ void FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
             file_size = stats.st_size;
         }
 
-        snprintf(file_s, 15, "%d", file_size);
-        printf("\nFile size: %s", file_s);
-        asprintf( & temp_frame, "%s*%s*%s", file, file_s, md5);
-        printf("\nTemp frame: %s", temp_frame);
-        
-        for (i = 16; temp_frame[i - 16] != '\0'; i++) {
-            frame[i] = temp_frame[i - 16];
+        asprintf( &data_to_send, "%s*%d*%s", file, file_size, md5);
+
+        frame[15] = type;
+
+        for (i = 16; data_to_send[i - 16] != '\0'; i++) {
+            frame[i] = data_to_send[i - 16];
         }
 
         for (j = i; j < 256; j++) {
             frame[j] = '\0';
         }
 
-        free(temp_frame);
-
-        printf("\nFrame send: %s\n", frame);
         FREMEN_sendFrame(socket_fd, frame);
+
+        free(data_to_send);
+        free(md5);
     }
+    return photo_fd;
 }
 /* ********************************************************************
  *
@@ -501,7 +502,6 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 FREMEN_sendFrame(socket_fd, frame);
 
                 free(frame);
-                //free(user_name);
                 
                 close(socket_fd);
                 socket_fd = 0;
@@ -523,7 +523,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
                     FREMEN_sendFrame(socket_fd, frame);
 
-                    printF("Conectado al servidor\n");
+                    printF("Connectat al servidor\n");
 
                     Frame frame_received;
 
@@ -579,7 +579,11 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 frame = NULL;
 
                 frame = FRAME_CONFIG_generateFrame(1);
-                FREMEN_sendInfoPhoto(frame, 'F', command_array[1]);
+                int photo_fd = FREMEN_sendInfoPhoto(frame, 'F', command_array[1]);
+
+                if (photo_fd > 0) {
+                    printF("\nEnviar..");
+                }
 
                 free(frame);
             } else {

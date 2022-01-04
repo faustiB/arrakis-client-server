@@ -292,6 +292,49 @@ User ATREIDES_receiveSearch(char data[240]) {
     return u;
 }
 
+Photo ATREIDES_receiveSendInfo (char data[240]) {
+    int i, j, k;
+    Photo p;
+    char * number;
+
+    i = 0;
+
+    while (data[i] != '*') {
+        p.file_name[i] = data[i];
+        i++;
+    }
+    p.file_name[i] = '\0';
+    i++;
+
+    j = 0;
+    number = (char * ) malloc(1 * sizeof(char));
+
+    while (data[i] != '*') {
+        number[j] = data[i];
+        number = (char * ) realloc(number, j + 2);
+        i++;
+        j++;
+    }
+    number[j] = '\0';
+    i++;
+
+    p.file_size = atoi(number);
+
+    k = 0;
+
+    while (data[i] != '\0') {
+        p.file_md5[k] = data[i];
+        i++;
+        k++;
+    }
+    p.file_md5[k] = '\0';
+
+    free(number);
+
+    printf("\nPhoto rebuda %s %d %s\n", p.file_name, p.file_size, p.file_md5);
+    return p;
+}
+
 /* ********************************************************************
  *
  * @Nombre : ATREIDES_sendFrame
@@ -345,6 +388,7 @@ void * ATREIDES_threadClient(void * fdClient) {
     int fd = * ((int * ) fdClient);
 
     Frame frame;
+    Photo photo;
     int i, exit;
     User u;
     char * frame_send, cadena[100], * search_data;
@@ -413,6 +457,13 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             free(u.username);
             free(u.postal_code);
+            break;
+
+            case 'F':
+            //send
+
+            photo = ATREIDES_receiveSendInfo(frame.data);
+            printf("\nTamany %d\n", photo.file_size);
             break;
 
         case 'Q':

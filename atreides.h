@@ -36,4 +36,10 @@ typedef struct {
     pthread_t thread;
 } User;
 
+typedef struct {
+    char file_name[30];
+    int file_size;
+    char file_md5[32];
+} Photo;
+
 #endif //_ATREIDES_H
