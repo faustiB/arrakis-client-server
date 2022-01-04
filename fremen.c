@@ -140,7 +140,7 @@ void FREMEN_freeMemory(char * command, char ** command_array) {
  ********************************************************************* */
 int FREMEN_checkNumberOfWords(char * command, int words) {
 
-    if (strcmp(command, "login") == 0) {
+    if (strcasecmp(command, "login") == 0) {
         if (words == 3) {
             //printF("Comanda OK.\n");
             return 0;
