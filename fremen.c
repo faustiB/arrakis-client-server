@@ -300,6 +300,88 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
     return frame;
 }
 
+char * FREMEN_getMD5(char * file) {
+    int link[2];
+    pid_t pid;
+    char foo;
+
+    if (pipe(link) == -1)
+        perror("pipe");
+
+    if ((pid = fork()) == -1)
+        perror("fork");
+
+    if (pid == 0) {
+
+        dup2(link[1], STDOUT_FILENO);
+        close(link[0]);
+        close(link[1]);
+        execl("/bin/md5sum", "md5sum", file, (char * ) 0);
+        perror("execl");
+
+    } else {
+        int i = 0;
+        char * md5_out = (char * ) malloc(33 * sizeof(char));
+        close(link[1]);
+        while (read(link[0], & foo, sizeof(foo)) > 0 && i < 32) {
+            md5_out[i] = foo;
+            i++;
+
+        }
+        md5_out[i] = '\0';
+        wait(NULL);
+
+        return md5_out;
+    }
+    return " ";
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : FREMEN_sendInfoPhoto
+ * @Def : ceación y generación de las tramas de send.
+ *
+ ********************************************************************* */
+void FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
+    int i = 0, j = 0;
+    char * md5, file_s[15], * temp_frame;
+    int photo_fd, file_size;
+    struct stat stats;
+
+    //buffer[240]
+
+    frame[15] = type;
+
+    photo_fd = open(file, O_RDONLY);
+
+    if (photo_fd < 0) {
+        printF("La imatge no existeix...\n");
+    } else {
+        md5 = FREMEN_getMD5(file);
+
+        if (stat(file, & stats) == 0) {
+            file_size = stats.st_size;
+        }
+
+        snprintf(file_s, 15, "%d", file_size);
+        printf("\nFile size: %s", file_s);
+        asprintf( & temp_frame, "%s*%s*%s", file, file_s, md5);
+        printf("\nTemp frame: %s", temp_frame);
+        
+        for (i = 16; temp_frame[i - 16] != '\0'; i++) {
+            frame[i] = temp_frame[i - 16];
+        }
+
+        for (j = i; j < 256; j++) {
+            frame[j] = '\0';
+        }
+
+        free(temp_frame);
+
+        printf("\nFrame send: %s\n", frame);
+        FREMEN_sendFrame(socket_fd, frame);
+    }
+}
 /* ********************************************************************
  *
  * @Nombre : FREMEN_showSearchReceived
@@ -493,7 +575,16 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             }
 
         } else if (strcasecmp(command_array[0], "send") == 0) {
-            //Implementar fase 3
+            if (socket_fd > 0) {
+                frame = NULL;
+
+                frame = FRAME_CONFIG_generateFrame(1);
+                FREMEN_sendInfoPhoto(frame, 'F', command_array[1]);
+
+                free(frame);
+            } else {
+                printF("No es pot enviar la imatge perque no esteu loginats al servidor... \n");
+            }
         } else if (strcasecmp(command_array[0], "photo") == 0) {
             //Implementar fase 3
         }
