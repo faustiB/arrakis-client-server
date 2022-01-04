@@ -120,10 +120,8 @@ char * ATREIDES_generateFrameSearch(char * frame, char type, char * str) {
     for (j = i; j < 256; j++) {
         frame[j] = '\0';
     }
-    
-    //free(str);
-    return frame;
 
+    return frame;
 }
 
 /* ********************************************************************
@@ -313,11 +311,8 @@ void ATREIDES_sendFrame(int fd, char * frame) {
  ********************************************************************* */
 char * ATREIDES_searchUsers(User u) {
 
-    //Li passem numusers i a mesura que afegim si strlen(res) i ja hem omplert la trama,
-    // creem un altre string per passar.
-
     int num_users_pc = 0, i;
-    char * res = NULL, num_users_pc_str[3], id_str[3];
+    char * res, num_users_pc_str[3], id_str[3];
 
     for (i = 0; i < num_users; i++) {
         if (strcmp(users[i].postal_code, u.postal_code) == 0) {
@@ -332,11 +327,11 @@ char * ATREIDES_searchUsers(User u) {
         if (strcmp(users[i].postal_code, u.postal_code) == 0) {
             snprintf(id_str, 3, "%d", users[i].id);
             asprintf( & res, "%s*%s*%s", res, users[i].username, id_str);
+            printf("\n Res %s %ld", res, strlen(res));
         }
     }
-
+    
     return res;
-
 }
 
 /* ********************************************************************
@@ -352,7 +347,7 @@ void * ATREIDES_threadClient(void * fdClient) {
     Frame frame;
     int i, exit;
     User u;
-    char * frame_send = NULL, cadena[100], * search_data;
+    char * frame_send, cadena[100], * search_data;
 
     exit = 0;
     while (!exit) {
@@ -415,6 +410,7 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             free(search_data);
             free(frame_send);
+
             free(u.username);
             free(u.postal_code);
             break;

@@ -363,17 +363,12 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
             free(name);
             free(id_user);
-            //free(postal_code);
         }
+        free(num_searched_users_str);
     } else {
         sprintf(cadena, "\nHi ha zero persones humanes a %s\n", postal_code);
         write(STDOUT_FILENO, cadena, strlen(cadena));
-        free(name);
-        free(id_user);
-        free(postal_code);
     }
-    free(postal_code);
-    free(num_searched_users_str);
 }
 
 /* ********************************************************************
@@ -436,7 +431,6 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 socket_fd = 0;
 
                 printF("\nDesconnectat d’Atreides. Dew!\n\n");
-                FREMEN_freeMemory(command, command_lower, command_array);
 
             } else {
                 printF("No puc fer logout si no estic connectat al servidor...\n");
@@ -445,7 +439,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
         } else if (strcmp(command_lower, "login") == 0) {
             if (socket_fd == 0) {
 
-                frame = NULL;
+                //frame = NULL;
 
                 frame = FRAME_CONFIG_generateFrame(1);
                 FREMEN_login(configuration, command, command_lower, command_array);
@@ -476,7 +470,6 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                     } else if (frame_received.type == 'E') {
                         printF("Error a l'hora de fer el login. \n");
                     }
-                    FREMEN_freeMemory(command, command_lower, command_array);
                 } else {
                     printF("No puc fer login, sembla que Atreides està aturat...\n");
 
@@ -496,6 +489,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 frame = FRAME_CONFIG_generateFrame(1);
                 frame = FREMEN_generateFrameSearch(frame, 'S', command_array[1]);
                 FREMEN_sendFrame(socket_fd, frame);
+
                 Frame frame_received;
                 frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
@@ -512,9 +506,6 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             //Implementar fase 3
         }
 
-        command = NULL;
-        command_lower = NULL;
-        command_array = NULL;
         FREMEN_freeMemory(command, command_lower, command_array);
 
         return 1;
