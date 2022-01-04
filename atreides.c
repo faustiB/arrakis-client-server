@@ -431,6 +431,9 @@ void * ATREIDES_threadClient(void * fdClient) {
             pthread_detach(pthread_self());
             pthread_cancel(pthread_self());
 
+            free(u.username);
+            free(u.postal_code);
+
             break;
         }
 

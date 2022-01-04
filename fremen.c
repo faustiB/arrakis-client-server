@@ -363,7 +363,7 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
             free(name);
             free(id_user);
-            free(postal_code);
+            //free(postal_code);
         }
     } else {
         sprintf(cadena, "\nHi ha zero persones humanes a %s\n", postal_code);
@@ -372,7 +372,7 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
         free(id_user);
         free(postal_code);
     }
-
+    free(postal_code);
     free(num_searched_users_str);
 }
 
