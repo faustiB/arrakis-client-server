@@ -120,7 +120,7 @@ char * ATREIDES_generateFrameSearch(char * frame, char type, char * str) {
     for (j = i; j < 256; j++) {
         frame[j] = '\0';
     }
-
+    
     return frame;
 }
 
@@ -312,7 +312,7 @@ void ATREIDES_sendFrame(int fd, char * frame) {
 char * ATREIDES_searchUsers(User u) {
 
     int num_users_pc = 0, i;
-    char * res, num_users_pc_str[3], id_str[3];
+    char * res = NULL;
 
     for (i = 0; i < num_users; i++) {
         if (strcmp(users[i].postal_code, u.postal_code) == 0) {
@@ -320,17 +320,14 @@ char * ATREIDES_searchUsers(User u) {
         }
     }
 
-    snprintf(num_users_pc_str, 3, "%d", num_users_pc);
-    asprintf( & res, "%s", num_users_pc_str);
+    asprintf( & res, "%d", num_users_pc);
 
     for (i = 0; i < num_users; i++) {
-        if (strcmp(users[i].postal_code, u.postal_code) == 0) {
-            snprintf(id_str, 3, "%d", users[i].id);
-            asprintf( & res, "%s*%s*%s", res, users[i].username, id_str);
-            printf("\n Res %s %ld", res, strlen(res));
+        if (strcmp(u.postal_code, users[i].postal_code) == 0) {
+            asprintf( &res, "%s*%s*%d", res, users[i].username, users[i].id);
         }
     }
-    
+
     return res;
 }
 
@@ -406,9 +403,9 @@ void * ATREIDES_threadClient(void * fdClient) {
             frame_send = FRAME_CONFIG_generateFrame(2);
             frame_send = ATREIDES_generateFrameSearch(frame_send, 'S', search_data);
 
-            ATREIDES_sendFrame(fd, frame_send);
-
             free(search_data);
+
+            ATREIDES_sendFrame(fd, frame_send);
             free(frame_send);
 
             free(u.username);

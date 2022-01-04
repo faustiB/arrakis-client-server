@@ -1,5 +1,5 @@
-
 #include "fremen.h"
+
 #include "ioscreen.h"
 
 
@@ -57,7 +57,6 @@ void RsiControlC(void) {
 
     free(configuration.ip);
     free(configuration.directory);
-
 
     if (socket_fd > 0) {
         char * frame;
@@ -419,8 +418,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 FREMEN_sendFrame(socket_fd, frame);
 
                 free(frame);
-                //free(user_name);
-                
+
                 close(socket_fd);
                 socket_fd = 0;
 
@@ -470,7 +468,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 }
                 free(frame);
 
-            } else if (socket_fd > 0){
+            } else if (socket_fd > 0) {
                 printF("No puc fer login si ja estic connectat al servidor amb un altre usuari...\n");
             }
 
