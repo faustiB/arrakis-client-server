@@ -15,7 +15,7 @@ User * users;
  *
  ********************************************************************* */
 void UpdateFile() {
-    char cadena[100];
+    char cadena[200];
     int fd;
 
     fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR, 0666);
@@ -29,7 +29,7 @@ void UpdateFile() {
         write(fd, cadena, sizeof(char) * strlen(cadena));
 
         for (int i = 0; i < num_users; i++) {
-            sprintf(cadena,  "%d-%s-%s\n", users[i].id, users[i].username, users[i].postal_code);
+            sprintf(cadena, "%d-%s-%s\n", users[i].id, users[i].username, users[i].postal_code);
             write(fd, cadena, sizeof(char) * strlen(cadena));
             memset(cadena,0,strlen(cadena));
         }
@@ -58,8 +58,9 @@ void RsiControlC(void) {
         free(users[i].postal_code);
         if (users[i].file_descriptor != -1) {
             close(users[i].file_descriptor);
-            pthread_detach(users[i].thread);
             pthread_cancel(users[i].thread);
+            pthread_join(users[i].thread, NULL);
+            pthread_detach(users[i].thread);
         }
     }
     free(users);
@@ -192,8 +193,8 @@ User * ATREIDES_fillUsers() {
 void ATREIDES_addUser(User u) {
 
     users = (User *) realloc (users, ((num_users) * sizeof(User)));
-    users[num_users-1].username = (char * ) malloc(sizeof(u.username));
-    users[num_users-1].postal_code = (char * ) malloc(sizeof(u.postal_code));
+    users[num_users-1].username = (char * ) malloc((strlen(u.username)+1) * sizeof(char));
+    users[num_users-1].postal_code = (char * ) malloc((strlen(u.postal_code)+1) * sizeof(char));
 
     users[num_users-1].id = u.id;
     strcpy(users[num_users-1].username, u.username);
@@ -209,7 +210,6 @@ void ATREIDES_addUser(User u) {
  *
  ********************************************************************* */
 User ATREIDES_receiveUser(char data[240]) {
-
     int i, j;
     User u;
 
@@ -312,7 +312,7 @@ void ATREIDES_sendFrame(int fd, char * frame) {
 char * ATREIDES_searchUsers(User u) {
 
     int num_users_pc = 0, i;
-    char * res = NULL;
+    char * res = NULL, * cadena;
 
     for (i = 0; i < num_users; i++) {
         if (strcmp(users[i].postal_code, u.postal_code) == 0) {
@@ -320,11 +320,14 @@ char * ATREIDES_searchUsers(User u) {
         }
     }
 
-    asprintf( & res, "%d", num_users_pc);
+    asprintf( &res, "%d", num_users_pc);
 
     for (i = 0; i < num_users; i++) {
         if (strcmp(u.postal_code, users[i].postal_code) == 0) {
-            asprintf( &res, "%s*%s*%d", res, users[i].username, users[i].id);
+            asprintf(&cadena, "%s*%s*%d", res, users[i].username, users[i].id);
+            free(res);
+            res = strdup(cadena);
+            free(cadena);
         }
     }
 
