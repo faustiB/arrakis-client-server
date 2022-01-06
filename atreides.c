@@ -7,6 +7,7 @@ void RsiControlC(void);
 ConfigAtreides configuration;
 int num_users, socket_fd;
 User * users;
+//semaphore sem;
 
 /* ********************************************************************
  *
@@ -121,7 +122,7 @@ char * ATREIDES_generateFrameSearch(char * frame, char type, char * str) {
     for (j = i; j < 256; j++) {
         frame[j] = '\0';
     }
-    
+
     return frame;
 }
 
@@ -292,6 +293,84 @@ User ATREIDES_receiveSearch(char data[240]) {
     return u;
 }
 
+void ATREIDES_receivePhoto(Photo p, int fd) {
+    Frame frame;
+    int total = 0, tamany = 240, check = 0, out;
+    char * out_file;
+
+    //asprintf(&out_file, "out_photos/%s", p.file_name);
+    asprintf(&out_file, "out_photos/fotodemiscojones.jpg");
+
+    out = open(out_file,  O_CREAT | O_WRONLY, 0666);
+
+    while (total <= p.file_size) {
+
+        frame = FRAME_CONFIG_receiveFrame(fd);
+
+        if (tamany == 0) break;
+
+        check = 0;
+        write(out, frame.data, tamany);
+
+        total = total + tamany;
+
+        check = total + 240;
+        if (check > p.file_size) {
+            tamany = p.file_size - total;
+        }
+        printf("\nFile %s - size total %d - total %d", p.file_name, p.file_size, total);
+    }
+
+    free(out_file);
+    close(out);
+}
+
+Photo ATREIDES_receiveSendInfo(char data[240]) {
+    int i, j, k;
+    Photo p;
+    char * number;
+
+    i = 0;
+
+    while (data[i] != '*') {
+        p.file_name[i] = data[i];
+        i++;
+    }
+    p.file_name[i] = '\0';
+    i++;
+
+    j = 0;
+    number = (char * ) malloc(1 * sizeof(char));
+
+    while (data[i] != '*') {
+        number[j] = data[i];
+        number = (char * ) realloc(number, j + 2);
+        i++;
+        j++;
+    }
+    number[j] = '\0';
+    i++;
+
+    p.file_size = atoi(number);
+
+    k = 0;
+
+    while (data[i] != '\0') {
+        p.file_md5[k] = data[i];
+        i++;
+        k++;
+    }
+    p.file_md5[k] = '\0';
+
+    free(number);
+
+    printf("\nPhoto rebuda %s %d %s\n", p.file_name, p.file_size, p.file_md5);
+    return p;
+}
+
+
+
+
 /* ********************************************************************
  *
  * @Nombre : ATREIDES_sendFrame
@@ -348,6 +427,7 @@ void * ATREIDES_threadClient(void * fdClient) {
     int i, exit;
     User u;
     char * frame_send, cadena[100], * search_data;
+    Photo photo;
 
     exit = 0;
     while (!exit) {
@@ -415,11 +495,21 @@ void * ATREIDES_threadClient(void * fdClient) {
             free(u.postal_code);
             break;
 
+        case 'F':
+            //send
+
+            photo = ATREIDES_receiveSendInfo(frame.data);
+            sprintf(cadena, "\nRebut send %s\n", photo.file_name);
+            write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
+            ATREIDES_receivePhoto(photo, fd);
+            break;
+
+
         case 'Q':
             exit = 1;
 
             u = ATREIDES_receiveUser(frame.data);
-            
+
             sprintf(cadena, "\nRebut Logout de  %s %s \nDesconnectat d'Atreides.\n", u.username, u.postal_code);
             write(STDOUT_FILENO, cadena, strlen(cadena));
 

@@ -19,6 +19,7 @@
 #include <pthread.h>
 
 #include "frame_config.h"
+#include "semaphore_v2.h"
 
 #define printF(x) write(1, x, strlen(x))
 
@@ -35,5 +36,13 @@ typedef struct {
     int file_descriptor;
     pthread_t thread;
 } User;
+
+
+typedef struct {
+    char file_name[30];
+    int file_size;
+    char file_md5[32];
+} Photo;
+
 
 #endif //_ATREIDES_H

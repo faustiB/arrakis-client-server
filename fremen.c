@@ -301,6 +301,164 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
 
 /* ********************************************************************
  *
+ * @Nombre : FREMEN_getMD5
+ * @Def : Obtención md5
+ *
+ ********************************************************************* */
+char * FREMEN_getMD5(char * file) {
+    int link[2];
+    pid_t pid;
+    char foo;
+
+    if (pipe(link) == -1)
+        perror("pipe");
+
+    if ((pid = fork()) == -1)
+        perror("fork");
+
+    if (pid == 0) {
+
+        dup2(link[1], STDOUT_FILENO);
+        close(link[0]);
+        close(link[1]);
+        execl("/bin/md5sum", "md5sum", file, (char * ) 0);
+        perror("execl");
+
+    } else {
+        int i = 0;
+        char * md5_out = (char * ) malloc(33 * sizeof(char));
+        close(link[1]);
+        while (read(link[0], & foo, sizeof(foo)) > 0 && i < 32) {
+            md5_out[i] = foo;
+            i++;
+
+        }
+        md5_out[i] = '\0';
+        wait(NULL);
+        close(link[0]);
+
+        return md5_out;
+    }
+    return " ";
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : FREMEN_sendInfoPhoto
+ * @Def : ceación y generación de las tramas de send.
+ *
+ ********************************************************************* */
+Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
+    int i = 0, j = 0;
+    char * md5, * data_to_send;
+    struct stat stats;
+    Photo p;
+
+    strcpy(p.file_name, file);
+    p.photo_fd = open(file, O_RDONLY);
+
+    if (p.photo_fd < 0) {
+        printF("La imatge no existeix...\n");
+    } else {
+        md5 = FREMEN_getMD5(file);
+
+        if (stat(file, & stats) == 0) {
+            p.file_size = stats.st_size;
+        }
+
+        asprintf( & data_to_send, "%s*%d*%s", p.file_name, p.file_size, md5);
+
+        frame[15] = type;
+
+        for (i = 16; data_to_send[i - 16] != '\0'; i++) {
+            frame[i] = data_to_send[i - 16];
+        }
+
+        for (j = i; j < 256; j++) {
+            frame[j] = '\0';
+        }
+
+        FREMEN_sendFrame(socket_fd, frame);
+
+        free(data_to_send);
+        free(md5);
+    }
+    return p;
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : FREMEN_generateFrameSend
+ * @Def : ceación de la trama send
+ *
+ ********************************************************************* */
+char * FREMEN_generateFrameSend(char frame[256], char type, char data[240]) {
+    int i = 0;// j = 0;
+
+    //char buffer[240];
+
+    frame[15] = type;
+
+    //asprintf(&buffer, "%s", data);
+
+    //strcpy(buffer,data);
+
+    for (i = 16; i < 240; i++) {
+        frame[i] = data[i - 16];
+    }
+
+    /*for (j = i; j < 256; j++) {
+        frame[j] = '\0';
+    }
+*/
+    //free(buffer);
+
+    return frame;
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : FREMEN_sendPhoto
+ * @Def : ceación y generación de las tramas de send.
+ *
+ ********************************************************************* */
+void FREMEN_sendPhoto(Photo p) {
+    int total = 0, tamany = 240, check = 0;
+    char * frame, buffer[240];
+
+    int i = 0;
+    while (total <= p.file_size) {
+
+        if (tamany == 0) break;
+        check = 0;
+
+        read(p.photo_fd, buffer, tamany);
+
+        frame = FRAME_CONFIG_generateFrame(1);
+
+        frame = FREMEN_generateFrameSend(frame, 'D', buffer);
+
+        if(i < 40) {printf(" %d - %s - %ld\n",i,frame,strlen(buffer));}
+        i++;
+
+        FREMEN_sendFrame(socket_fd, frame);
+
+        total = total + tamany;
+
+        check = total + 240;
+        if (check > p.file_size) {
+            tamany = p.file_size - total;
+        }
+
+        free(frame);
+    }
+
+    close(p.photo_fd);
+}
+
+
+/* ********************************************************************
+ *
  * @Nombre : FREMEN_showSearchReceived
  * @Def : Función para tratar el comando que se introduce
  *
@@ -378,6 +536,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
     char * command = NULL, * frame = NULL, cadena[200];
     char * ( * command_array);
     int i = 0, num_of_words = 0, isok = 0;
+    Photo p;
 
     //Lectura por pantalla del comando y tratado para quedarnos con una cadena
     printF("$ ");
@@ -491,7 +650,23 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             }
 
         } else if (strcasecmp(command_array[0], "send") == 0) {
-            //Implementar fase 3
+            if (socket_fd > 0) {
+                frame = NULL;
+
+                frame = FRAME_CONFIG_generateFrame(1);
+                p = FREMEN_sendInfoPhoto(frame, 'F', command_array[1]);
+
+                if (p.photo_fd > 0) {
+                    FREMEN_sendPhoto(p);
+                }
+
+                free(frame);
+            } else {
+                printF("No es pot enviar la imatge perque no esteu loginats al servidor... \n");
+            }
+
+
+
         } else if (strcasecmp(command_array[0], "photo") == 0) {
             //Implementar fase 3
         }
