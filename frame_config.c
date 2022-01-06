@@ -44,14 +44,9 @@ char * FRAME_CONFIG_generateFrame(int origin) {
 
     if (origin == 1)
     {
-
         sprintf(frame, "FREMEN");
-        
-
     } else if (origin == 2){
-
         sprintf(frame, "ATREIDES");
-
     }
     
     for (i = strlen(frame); i < 15; i++) {

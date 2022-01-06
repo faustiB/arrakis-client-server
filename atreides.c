@@ -1,5 +1,5 @@
-
 #include "atreides.h"
+
 #include "ioscreen.h"
 
 void RsiControlC(void);
@@ -29,9 +29,9 @@ void UpdateFile() {
         write(fd, cadena, sizeof(char) * strlen(cadena));
 
         for (int i = 0; i < num_users; i++) {
-            sprintf(cadena,  "%d-%s-%s\n", users[i].id, users[i].username, users[i].postal_code);
+            sprintf(cadena, "%d-%s-%s\n", users[i].id, users[i].username, users[i].postal_code);
             write(fd, cadena, sizeof(char) * strlen(cadena));
-            memset(cadena,0,strlen(cadena));
+            memset(cadena, 0, strlen(cadena));
         }
 
         close(fd);
@@ -141,16 +141,16 @@ User * ATREIDES_fillUsers() {
     if (fd < 0) {
         //printF("Fitxer de usuaris erroni\n");
 
-        fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR , 0666);
-        if(fd < 0){
+        fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR, 0666);
+        if (fd < 0) {
 
             printF("Error creant fitxer\n");
             raise(SIGINT);
 
         } else {
 
-            write(fd,"1\n",2);
-            write(fd,"1-Admin-00000\n",strlen("1-Admin-00000\n"));
+            write(fd, "1\n", 2);
+            write(fd, "1-Admin-00000\n", strlen("1-Admin-00000\n"));
 
         }
 
@@ -179,7 +179,6 @@ User * ATREIDES_fillUsers() {
 
     close(fd);
 
-
     return users_read;
 }
 
@@ -191,15 +190,15 @@ User * ATREIDES_fillUsers() {
  ********************************************************************* */
 void ATREIDES_addUser(User u) {
 
-    users = (User *) realloc (users, ((num_users) * sizeof(User)));
-    users[num_users-1].username = (char * ) malloc(sizeof(u.username));
-    users[num_users-1].postal_code = (char * ) malloc(sizeof(u.postal_code));
+    users = (User * ) realloc(users, ((num_users) * sizeof(User)));
+    users[num_users - 1].username = (char * ) malloc(sizeof(u.username));
+    users[num_users - 1].postal_code = (char * ) malloc(sizeof(u.postal_code));
 
-    users[num_users-1].id = u.id;
-    strcpy(users[num_users-1].username, u.username);
-    strcpy(users[num_users-1].postal_code, u.postal_code);
-    users[num_users-1].file_descriptor = u.file_descriptor;
-    users[num_users-1].thread = u.thread;
+    users[num_users - 1].id = u.id;
+    strcpy(users[num_users - 1].username, u.username);
+    strcpy(users[num_users - 1].postal_code, u.postal_code);
+    users[num_users - 1].file_descriptor = u.file_descriptor;
+    users[num_users - 1].thread = u.thread;
 }
 
 /* ********************************************************************
@@ -292,7 +291,38 @@ User ATREIDES_receiveSearch(char data[240]) {
     return u;
 }
 
-Photo ATREIDES_receiveSendInfo (char data[240]) {
+void ATREIDES_receivePhoto(Photo p, int fd) {
+    Frame frame;
+    int total = 0, tamany = 240, check = 0, out;
+    char * out_file;
+    
+    asprintf(&out_file, "out_photos/%s", p.file_name);
+
+    out = open(out_file, O_APPEND | O_CREAT | O_WRONLY, 0666);
+
+    while (total <= p.file_size) {
+
+        frame = FRAME_CONFIG_receiveFrame(fd);
+
+        if (tamany == 0) break;
+
+        check = 0;
+        write(out, frame.data, tamany);
+
+        total = total + tamany;
+
+        check = total + 240;
+        if (check > p.file_size) {
+            tamany = p.file_size - total;
+        }
+        printf("\nFile %s - size total %d - total %d", p.file_name, p.file_size, total);
+    }
+
+    free(out_file);
+    close(out);
+}
+
+Photo ATREIDES_receiveSendInfo(char data[240]) {
     int i, j, k;
     Photo p;
     char * number;
@@ -373,7 +403,7 @@ char * ATREIDES_searchUsers(User u) {
             printf("\n Res %s %ld", res, strlen(res));
         }
     }
-    
+
     return res;
 }
 
@@ -410,7 +440,7 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             i = 0;
             for (i = 0; i < num_users; i++) {
-                if ( ( strcmp(u.username, users[i].username) == 0 ) && ( strcmp(u.postal_code, users[i].postal_code) == 0 ) ) {
+                if ((strcmp(u.username, users[i].username) == 0) && (strcmp(u.postal_code, users[i].postal_code) == 0)) {
                     u.id = users[i].id;
                     users[i].file_descriptor = fd;
                     users[i].thread = pthread_self();
@@ -459,18 +489,20 @@ void * ATREIDES_threadClient(void * fdClient) {
             free(u.postal_code);
             break;
 
-            case 'F':
+        case 'F':
             //send
 
             photo = ATREIDES_receiveSendInfo(frame.data);
-            printf("\nTamany %d\n", photo.file_size);
+            sprintf(cadena, "\nRebut send %s\n", photo.file_name);
+            write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
+            ATREIDES_receivePhoto(photo, fd);
             break;
 
         case 'Q':
             exit = 1;
 
             u = ATREIDES_receiveUser(frame.data);
-            
+
             sprintf(cadena, "\nRebut Logout de  %s %s \nDesconnectat d'Atreides.\n", u.username, u.postal_code);
             write(STDOUT_FILENO, cadena, strlen(cadena));
 
