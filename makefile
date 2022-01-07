@@ -13,7 +13,7 @@ atreides.o: atreides.c atreides.h frame_config.h ioscreen.h
 	gcc -c atreides.c -Wall -Wextra -lpthread
 
 fase1: fremen.o frame_config.o ioscreen.o
-	gcc fremen.o frame_config.o ioscreen.o -o fremen -Wall -Wextra
+	gcc fremen.o frame_config.o ioscreen.o -o fremen -Wall -Wextra -ggdb3 -g
 
 fase2: atreides.o frame_config.o ioscreen.o
 	gcc atreides.o frame_config.o ioscreen.o -o atreides -Wall -Wextra -lpthread

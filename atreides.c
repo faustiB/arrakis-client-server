@@ -296,18 +296,15 @@ User ATREIDES_receiveSearch(char data[240]) {
 void ATREIDES_receivePhoto(Photo p, int fd) {
     Frame frame;
     int total = 0, tamany = 240, check = 0, out;
-    char * out_file;
+    char * md5, *out_file;
 
-    //asprintf(&out_file, "out_photos/%s", p.file_name);
-    asprintf(&out_file, "out_photos/fotodemiscojones.jpg");
+    asprintf(&out_file, "out_photos/%s", p.file_name);
 
-    out = open(out_file,  O_CREAT | O_WRONLY, 0666);
+    out = open(p.file_name,  O_CREAT | O_WRONLY, 0666);
 
     while (total <= p.file_size) {
 
         frame = FRAME_CONFIG_receiveFrame(fd);
-
-        if (tamany == 0) break;
 
         check = 0;
         write(out, frame.data, tamany);
@@ -319,10 +316,20 @@ void ATREIDES_receivePhoto(Photo p, int fd) {
             tamany = p.file_size - total;
         }
         printf("\nFile %s - size total %d - total %d", p.file_name, p.file_size, total);
+        if (tamany == 0) break;
     }
 
     free(out_file);
+    md5 = FRAME_CONFIG_getMD5(out_file);
+
+    if (strcmp(p.file_md5, md5) == 0) {
+        printF("Les fotos són iguals! \n");
+    } else {
+        printF("Error: Les fotos no són iguals! \n");
+        printf("\nOrigen: %s Destí: %s\n", p.file_md5, md5);
+    }
     close(out);
+    free(md5);
 }
 
 Photo ATREIDES_receiveSendInfo(char data[240]) {

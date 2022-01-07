@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 typedef struct {
     char origin[15];
@@ -17,5 +19,6 @@ typedef struct {
 
 char * FRAME_CONFIG_generateFrame(int origin);
 Frame FRAME_CONFIG_receiveFrame(int fd);
+char * FRAME_CONFIG_getMD5(char * file);
 
 #endif //_FRAME_CONFIG_H

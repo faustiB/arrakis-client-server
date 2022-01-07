@@ -41,6 +41,7 @@ char * FRAME_CONFIG_generateFrame(int origin) {
     int i = 0;
 
     frame = (char * ) malloc(sizeof(char) * 256);
+    memset(frame, 0, 256 * sizeof(*frame));
 
     if (origin == 1)
     {
@@ -59,4 +60,47 @@ char * FRAME_CONFIG_generateFrame(int origin) {
     }
 
     return frame;
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : FRAME_CONFIG__getMD5
+ * @Def : Obtención md5
+ *
+ ********************************************************************* */
+char * FRAME_CONFIG_getMD5(char * file) {
+    int link[2];
+    pid_t pid;
+    char foo;
+
+    if (pipe(link) == -1)
+        perror("pipe");
+
+    if ((pid = fork()) == -1)
+        perror("fork");
+
+    if (pid == 0) {
+
+        dup2(link[1], STDOUT_FILENO);
+        close(link[0]);
+        close(link[1]);
+        execl("/bin/md5sum", "md5sum", file, (char * ) 0);
+        perror("execl");
+
+    } else {
+        int i = 0;
+        char * md5_out = (char * ) malloc(33 * sizeof(char));
+        close(link[1]);
+        while (read(link[0], & foo, sizeof(foo)) > 0 && i < 32) {
+            md5_out[i] = foo;
+            i++;
+
+        }
+        md5_out[i] = '\0';
+        wait(NULL);
+        close(link[0]);
+
+        return md5_out;
+    }
+    return " ";
 }
