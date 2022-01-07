@@ -374,7 +374,8 @@ void FREMEN_generateFrameSend(char * frame, char type, char data[240], int taman
  ********************************************************************* */
 void FREMEN_sendPhoto(Photo p) {
     int total = 0, tamany = 240, check = 0;
-    char *frame, buffer[240];
+    //char *frame,
+    char buffer[240];
 
     while (total <= p.file_size) {
 
@@ -383,12 +384,13 @@ void FREMEN_sendPhoto(Photo p) {
 
         memset(buffer, 0, sizeof(buffer));
         read(p.photo_fd, buffer, tamany);
+        write(socket_fd, buffer, tamany);
 
-        frame = FRAME_CONFIG_generateFrame(1);
+        /*frame = FRAME_CONFIG_generateFrame(1);
         FREMEN_generateFrameSend(frame, 'D', buffer, tamany);
 
         //FREMEN_sendFrame(socket_fd, frame);
-        FREMEN_sendFrameSend(socket_fd, frame);
+        FREMEN_sendFrameSend(socket_fd, frame);*/
 
         total = total + tamany;
 
@@ -397,7 +399,7 @@ void FREMEN_sendPhoto(Photo p) {
             tamany = p.file_size - total;
         }
 
-        free(frame);
+        //free(frame);
         usleep(20000);
     }
 

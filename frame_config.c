@@ -11,6 +11,8 @@ Frame FRAME_CONFIG_receiveFrame(int fd) {
     char frame_read[256];
     Frame frame;
 
+    memset(frame.origin, 0, sizeof(frame.origin));
+    memset(frame.data, 0, sizeof(frame.data));
     read(fd, frame_read, sizeof(char) * 256);
 
     i = 0;
