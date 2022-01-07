@@ -41,18 +41,12 @@ char * FRAME_CONFIG_generateFrame(int origin) {
     int i = 0;
 
     frame = (char * ) malloc(sizeof(char) * 256);
-    memset(frame, 0, 256 * sizeof(*frame));
+    memset(frame, 0, 256 * sizeof(char));
 
-    if (origin == 1)
-    {
-
+    if (origin == 1) {
         sprintf(frame, "FREMEN");
-
-
     } else if (origin == 2){
-
         sprintf(frame, "ATREIDES");
-
     }
 
     for (i = strlen(frame); i < 15; i++) {

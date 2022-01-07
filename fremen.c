@@ -18,6 +18,13 @@ void FREMEN_sendFrame(int fd, char * frame) {
     write(fd, frame, 256);
 }
 
+void FREMEN_sendFrameSend(int fd, char * frame) {
+    write(fd, frame, 256);
+
+    char str[2];
+    read(fd,str,2);
+}
+
 /* ********************************************************************
  *
  * @Nombre : FREMEN_generateFrameLogout
@@ -349,29 +356,14 @@ Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
  * @Def : ceación de la trama send
  *
  ********************************************************************* */
-char * FREMEN_generateFrameSend(char frame[256], char type, char data[240], int tamany) {
-    int i = 0;// j = 0;
-
-    //char buffer[240];
+void FREMEN_generateFrameSend(char * frame, char type, char data[240], int tamany) {
+    int i = 0;
 
     frame[15] = type;
 
-    //asprintf(&buffer, "%s", data);
-
-    //strcpy(buffer,data);
-
-    //for (i = 16; i < 240; i++) {
     for (i = 16; i < tamany; i++) {
         frame[i] = data[i - 16];
     }
-
-    /*for (j = i; j < 256; j++) {
-        frame[j] = '\0';
-    }
-*/
-    //free(buffer);
-
-    return frame;
 }
 
 /* ********************************************************************
@@ -382,7 +374,7 @@ char * FREMEN_generateFrameSend(char frame[256], char type, char data[240], int 
  ********************************************************************* */
 void FREMEN_sendPhoto(Photo p) {
     int total = 0, tamany = 240, check = 0;
-    char * frame, buffer[240];
+    char *frame, buffer[240];
 
     while (total <= p.file_size) {
 
@@ -393,11 +385,10 @@ void FREMEN_sendPhoto(Photo p) {
         read(p.photo_fd, buffer, tamany);
 
         frame = FRAME_CONFIG_generateFrame(1);
-        frame = FREMEN_generateFrameSend(frame, 'D', buffer, tamany);
+        FREMEN_generateFrameSend(frame, 'D', buffer, tamany);
 
-        //if(tamany < 244) {printf("%s - %ld\n", frame,strlen(buffer));}
-
-        FREMEN_sendFrame(socket_fd, frame);
+        //FREMEN_sendFrame(socket_fd, frame);
+        FREMEN_sendFrameSend(socket_fd, frame);
 
         total = total + tamany;
 
@@ -407,7 +398,7 @@ void FREMEN_sendPhoto(Photo p) {
         }
 
         free(frame);
-        usleep(2000);
+        usleep(20000);
     }
 
     close(p.photo_fd);

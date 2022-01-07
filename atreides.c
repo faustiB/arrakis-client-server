@@ -296,11 +296,11 @@ User ATREIDES_receiveSearch(char data[240]) {
 void ATREIDES_receivePhoto(Photo p, int fd) {
     Frame frame;
     int total = 0, tamany = 240, check = 0, out;
-    char * md5, *out_file;
+    char * md5 = NULL, *out_file = NULL;
 
     asprintf(&out_file, "out_photos/%s", p.file_name);
 
-    out = open(p.file_name,  O_CREAT | O_WRONLY, 0666);
+    out = open(out_file,  O_CREAT | O_WRONLY, 0777);
 
     while (total <= p.file_size) {
 
@@ -308,6 +308,7 @@ void ATREIDES_receivePhoto(Photo p, int fd) {
 
         check = 0;
         write(out, frame.data, tamany);
+        write(fd, "ok", 2);
 
         total = total + tamany;
 
@@ -315,11 +316,10 @@ void ATREIDES_receivePhoto(Photo p, int fd) {
         if (check > p.file_size) {
             tamany = p.file_size - total;
         }
-        printf("\nFile %s - size total %d - total %d", p.file_name, p.file_size, total);
+        printf("File %s - size total %d - total %d\n", p.file_name, p.file_size, total);
         if (tamany == 0) break;
     }
 
-    free(out_file);
     md5 = FRAME_CONFIG_getMD5(out_file);
 
     if (strcmp(p.file_md5, md5) == 0) {
@@ -330,6 +330,7 @@ void ATREIDES_receivePhoto(Photo p, int fd) {
     }
     close(out);
     free(md5);
+    free(out_file);
 }
 
 Photo ATREIDES_receiveSendInfo(char data[240]) {
