@@ -89,8 +89,8 @@ void RsiControlC(void) {
  *
  ********************************************************************* */
 ConfigFremen FREMEN_fillConfiguration(char * argv) {
-    char caracter = ' ', * cadena = NULL;
-    int i = 0, fd;
+    char caracter = ' ', * cadena = NULL, *temp = NULL;
+    int i = 0, fd, size = 0;
     ConfigFremen c;
 
     //Apertura del fichero
@@ -111,8 +111,20 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
         c.port = atoi(cadena);
         free(cadena);
 
-        c.directory = IOSCREEN_readUntilIntro(fd, caracter, i);
+        //c.directory = IOSCREEN_readUntilIntro(fd, caracter, i);
+
+        temp = IOSCREEN_readUntilIntro(fd, caracter, i);
+        size = strlen(temp);
+
+        c.directory = (char *) malloc (sizeof(char) * size);
+        memset(c.directory, 0, size * sizeof(char));
+
+        for (i = 1; temp[i] != '\0'; i++) {
+            c.directory[i-1] = temp[i];
+        }
+
         close(fd);
+        free(temp);
     }
 
     //Lectura del fichero de configuración y cierre de su file descriptor.
@@ -131,17 +143,45 @@ void FREMEN_freeMemory(char * command, char ** command_array) {
     free(command_array);
 }
 
+
+int FREMEN_checkInputOnlyNumber(char * input){
+
+    unsigned int i = 0;
+    int  count = 0;
+
+    for (i = 0; i < strlen(input); i++){
+
+        if (input[i]>='0' && input[i]<='9') {
+            count++;
+        }
+
+    }
+
+    return count;
+
+}
+
 /* ********************************************************************
  *
  * @Nombre : FREMEN_checkNumberOfWords
  * @Def : Función para comprobar el número de parametros para el comando.
  *
  ********************************************************************* */
-int FREMEN_checkNumberOfWords(char * command, int words) {
+int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) {
 
     if (strcasecmp(command, "login") == 0) {
         if (words == 3) {
-            //printF("Comanda OK.\n");
+            unsigned int checkOnlyNumber;
+
+            checkOnlyNumber = FREMEN_checkInputOnlyNumber(command_array[2]);
+            if (checkOnlyNumber == strlen(command_array[2])) {
+                return 0;
+            } else {
+                printF("Comanda KO. Codi Postal incorrecte, només números.\n");
+                return 1;
+            }
+
+
             return 0;
         } else if (words < 3) {
             printF("Comanda KO. Falta paràmetres\n");
@@ -323,7 +363,7 @@ Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
             p.file_size = stats.st_size;
         }
 
-        asprintf( & data_to_send, "%d.jpg*%d*%s", user_id, p.file_size, md5);
+        asprintf( & data_to_send, "%s*%d*%s", p.file_name, p.file_size, md5);
 
         frame[15] = type;
 
@@ -462,6 +502,10 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
     }
 }
 
+
+
+
+
 /* ********************************************************************
  *
  * @Nombre : FREMEN_promptChoice
@@ -501,7 +545,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
     }
 
     //Checkeo del número de parametros.
-    isok = FREMEN_checkNumberOfWords(command_array[0], num_of_words);
+    isok = FREMEN_checkNumberOfWords(command_array[0], num_of_words, command_array);
 
     //Comando custom OK
     if (isok == 0) {
@@ -519,6 +563,9 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
                 printF("\nDesconnectat d’Atreides. Dew!\n\n");
 
+                FREMEN_freeMemory(command, command_array);
+                raise(SIGINT);
+
             } else {
                 printF("No puc fer logout si no estic connectat al servidor...\n");
             }
@@ -530,31 +577,33 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 FREMEN_login(configuration, command, command_array);
 
                 if (socket_fd > 0) {
-                    frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
 
-                    FREMEN_sendFrame(socket_fd, frame);
 
-                    printF("Conectado al servidor\n");
+                        frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
+                        FREMEN_sendFrame(socket_fd, frame);
+                        printF("Conectado al servidor\n");
+                        Frame frame_received;
+                        frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
-                    Frame frame_received;
+                        if (frame_received.type == 'O') {
+                            control_login = 1;
 
-                    frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
+                            user_id = atoi(frame_received.data);
+                            user_name = (char * ) malloc(sizeof(char) * strlen(command_array[1]) + 1);
+                            strcpy(user_name, command_array[1]);
 
-                    if (frame_received.type == 'O') {
-                        control_login = 1;
+                            sprintf(cadena, "Benvingut %s. Tens ID: %d. \n", user_name, user_id);
+                            write(STDOUT_FILENO, cadena, strlen(cadena));
 
-                        user_id = atoi(frame_received.data);
-                        user_name = (char * ) malloc(sizeof(char) * strlen(command_array[1]) + 1);
-                        strcpy(user_name, command_array[1]);
+                            printF("Ara estàs connectat a Atreides.\n");
 
-                        sprintf(cadena, "Benvingut %s. Tens ID: %d. \n", user_name, user_id);
-                        write(STDOUT_FILENO, cadena, strlen(cadena));
+                        } else if (frame_received.type == 'E') {
+                            printF("Error a l'hora de fer el login. \n");
+                        }
 
-                        printF("Ara estàs connectat a Atreides.\n");
 
-                    } else if (frame_received.type == 'E') {
-                        printF("Error a l'hora de fer el login. \n");
-                    }
+
+
                 } else {
                     printF("No puc fer login, sembla que Atreides està aturat...\n");
 
