@@ -7,11 +7,15 @@
  *
  ********************************************************************* */
 char * IOSCREEN_readUntilIntro(int fd, char caracter, int i) {
-    char * buffer = (char * ) malloc(1 * sizeof(char));
+    char * buffer = NULL;
 
     while (caracter != '\n' || i == 0) {
         read(fd, & caracter, sizeof(char));
-        buffer = (char * ) realloc(buffer, i + 1);
+        if (buffer == NULL) {
+            buffer = (char * ) malloc(1 * sizeof(char));
+        } else {
+            buffer = (char * ) realloc(buffer, i + 1);
+        }
         buffer[i] = caracter;
 
         if (caracter == '\n' || caracter == '\0') {

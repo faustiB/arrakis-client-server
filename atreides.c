@@ -294,48 +294,44 @@ User ATREIDES_receiveSearch(char data[240]) {
 }
 
 void ATREIDES_receivePhoto(Photo p, int fd) {
-    //Frame frame;
-    int total = 0, tamany = 240, check = 0, out;
+    Frame frame;
+    int out, contador_trames = 0;
     char * md5 = NULL, *out_file = NULL;
-    char buffer[240];
 
     asprintf(&out_file, "out_photos/%s", p.file_name);
 
-    out = open(out_file,  O_CREAT | O_WRONLY, 0777);
+    out = open(out_file, O_CREAT | O_WRONLY | O_TRUNC, 0666);
 
-    while (total <= p.file_size) {
-
-        //frame = FRAME_CONFIG_receiveFrame(fd);
-
-        check = 0;
-
-        memset(buffer, 0, sizeof(buffer));
-        read(fd, buffer, tamany);
-        write(out, buffer, tamany);
-
-        //write(out, frame.data, tamany);
-        //write(fd, "ok", 2);
-
-        total = total + tamany;
-
-        check = total + 240;
-        if (check > p.file_size) {
-            tamany = p.file_size - total;
-        }
-        printf("File %s - size total %d - total %d\n", p.file_name, p.file_size, total);
-        if (tamany == 0) break;
+    int num_trames = p.file_size / 240;
+    if (p.file_size % 240 != 0) {
+        num_trames++;
     }
+
+    while (contador_trames < num_trames) {
+
+        frame = FRAME_CONFIG_receiveFrame(fd);
+
+        if (contador_trames == num_trames-1 && p.file_size % 240 != 0) {
+            write(out, frame.data, p.file_size % 240);
+        } else {
+            write(out, frame.data, 240);
+        }
+
+        contador_trames++;
+    }
+    close(out);
 
     md5 = FRAME_CONFIG_getMD5(out_file);
 
-    if (strcmp(p.file_md5, md5) == 0) {
-        printF("Les fotos són iguals! \n");
-    } else {
-        printF("Error: Les fotos no són iguals! \n");
-        printf("\nOrigen: %s Destí: %s\n", p.file_md5, md5);
+    if (md5 != NULL) {
+        if (strcmp(p.file_md5, md5) == 0) {
+            printF("Les fotos són iguals! \n");
+        } else {
+            printF("Error: Les fotos no són iguals! \n");
+        }
+        free(md5);
     }
-    close(out);
-    free(md5);
+
     free(out_file);
 }
 
@@ -378,7 +374,6 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
 
     free(number);
 
-    printf("\nPhoto rebuda %s %d %s\n", p.file_name, p.file_size, p.file_md5);
     return p;
 }
 
@@ -468,7 +463,7 @@ void * ATREIDES_threadClient(void * fdClient) {
             }
 
             if (u.id == 0) {
-                //Semaforo para sumar uno a la vez
+                //Mutex para sumar uno a la vez
                 num_users++;
                 u.id = num_users;
                 ATREIDES_addUser(u);
@@ -515,6 +510,7 @@ void * ATREIDES_threadClient(void * fdClient) {
             photo = ATREIDES_receiveSendInfo(frame.data);
             sprintf(cadena, "\nRebut send %s\n", photo.file_name);
             write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
+            
             ATREIDES_receivePhoto(photo, fd);
             break;
 

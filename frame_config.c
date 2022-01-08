@@ -8,11 +8,12 @@
  ********************************************************************* */
 Frame FRAME_CONFIG_receiveFrame(int fd) {
     int i;
-    char frame_read[256];
+    unsigned char frame_read[256];
     Frame frame;
 
     memset(frame.origin, 0, sizeof(frame.origin));
     memset(frame.data, 0, sizeof(frame.data));
+
     read(fd, frame_read, sizeof(char) * 256);
 
     i = 0;
@@ -67,7 +68,6 @@ char * FRAME_CONFIG_generateFrame(int origin) {
 char * FRAME_CONFIG_getMD5(char * file) {
     int link[2];
     pid_t pid;
-    char foo;
 
     if (pipe(link) == -1)
         perror("pipe");
@@ -84,19 +84,16 @@ char * FRAME_CONFIG_getMD5(char * file) {
         perror("execl");
 
     } else {
-        int i = 0;
-        char * md5_out = (char * ) malloc(33 * sizeof(char));
-        close(link[1]);
-        while (read(link[0], & foo, sizeof(foo)) > 0 && i < 32) {
-            md5_out[i] = foo;
-            i++;
-
-        }
-        md5_out[i] = '\0';
         wait(NULL);
+        close(link[1]);
+        
+        char * md5_out = (char * ) malloc(256* sizeof(char));
+        read(link[0], md5_out, 256);
+        strtok(md5_out, " ");
+
         close(link[0]);
 
         return md5_out;
     }
-    return " ";
+    return NULL;
 }

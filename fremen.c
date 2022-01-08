@@ -18,13 +18,6 @@ void FREMEN_sendFrame(int fd, char * frame) {
     write(fd, frame, 256);
 }
 
-void FREMEN_sendFrameSend(int fd, char * frame) {
-    write(fd, frame, 256);
-
-    char str[2];
-    read(fd,str,2);
-}
-
 /* ********************************************************************
  *
  * @Nombre : FREMEN_generateFrameLogout
@@ -356,12 +349,12 @@ Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
  * @Def : ceación de la trama send
  *
  ********************************************************************* */
-void FREMEN_generateFrameSend(char * frame, char type, char data[240], int tamany) {
+void FREMEN_generateFrameSend(char * frame, char type, char data[240]) {
     int i = 0;
 
     frame[15] = type;
 
-    for (i = 16; i < tamany; i++) {
+    for (i = 16; i < 256; i++) {
         frame[i] = data[i - 16];
     }
 }
@@ -373,34 +366,27 @@ void FREMEN_generateFrameSend(char * frame, char type, char data[240], int taman
  *
  ********************************************************************* */
 void FREMEN_sendPhoto(Photo p) {
-    int total = 0, tamany = 240, check = 0;
-    //char *frame,
-    char buffer[240];
+    int contador_trames = 0, num_trames = 0;
+    char *frame, buffer[240];
 
-    while (total <= p.file_size) {
+    num_trames = p.file_size / 240;
+    if (p.file_size % 240 != 0) {
+        num_trames++;
+    }
 
-        if (tamany == 0) break;
-        check = 0;
-
+    while (contador_trames < num_trames) {
         memset(buffer, 0, sizeof(buffer));
-        read(p.photo_fd, buffer, tamany);
-        write(socket_fd, buffer, tamany);
+        read(p.photo_fd, buffer, 240);
 
-        /*frame = FRAME_CONFIG_generateFrame(1);
-        FREMEN_generateFrameSend(frame, 'D', buffer, tamany);
+        frame = FRAME_CONFIG_generateFrame(1);
+        FREMEN_generateFrameSend(frame, 'D', buffer);
 
-        //FREMEN_sendFrame(socket_fd, frame);
-        FREMEN_sendFrameSend(socket_fd, frame);*/
+        FREMEN_sendFrame(socket_fd, frame);
 
-        total = total + tamany;
+        contador_trames++;
 
-        check = total + 240;
-        if (check > p.file_size) {
-            tamany = p.file_size - total;
-        }
-
-        //free(frame);
-        usleep(20000);
+        free(frame);
+        usleep(300);
     }
 
     close(p.photo_fd);

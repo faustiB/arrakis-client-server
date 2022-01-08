@@ -41,7 +41,7 @@ typedef struct {
 typedef struct {
     char file_name[30];
     int file_size;
-    char file_md5[32];
+    char file_md5[35];
 } Photo;
 
 
