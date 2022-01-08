@@ -1,5 +1,5 @@
-
 #include "atreides.h"
+
 #include "ioscreen.h"
 
 void RsiControlC(void);
@@ -7,7 +7,6 @@ void RsiControlC(void);
 ConfigAtreides configuration;
 int num_users, socket_fd;
 User * users;
-//semaphore sem;
 
 /* ********************************************************************
  *
@@ -32,7 +31,8 @@ void UpdateFile() {
         for (int i = 0; i < num_users; i++) {
             sprintf(cadena, "%d-%s-%s\n", users[i].id, users[i].username, users[i].postal_code);
             write(fd, cadena, sizeof(char) * strlen(cadena));
-            memset(cadena,0,strlen(cadena));memset(cadena,0,strlen(cadena));
+            memset(cadena, 0, strlen(cadena));
+            memset(cadena, 0, strlen(cadena));
         }
 
         close(fd);
@@ -143,16 +143,16 @@ User * ATREIDES_fillUsers() {
     if (fd < 0) {
         //printF("Fitxer de usuaris erroni\n");
 
-        fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR , 0666);
-        if(fd < 0){
+        fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR, 0666);
+        if (fd < 0) {
 
             printF("Error creant fitxer\n");
             raise(SIGINT);
 
         } else {
 
-            write(fd,"1\n",2);
-            write(fd,"1-Admin-00000\n",strlen("1-Admin-00000\n"));
+            write(fd, "1\n", 2);
+            write(fd, "1-Admin-00000\n", strlen("1-Admin-00000\n"));
 
         }
 
@@ -181,7 +181,6 @@ User * ATREIDES_fillUsers() {
 
     close(fd);
 
-
     return users_read;
 }
 
@@ -193,15 +192,15 @@ User * ATREIDES_fillUsers() {
  ********************************************************************* */
 void ATREIDES_addUser(User u) {
 
-    users = (User *) realloc (users, ((num_users) * sizeof(User)));
-    users[num_users-1].username = (char * ) malloc((strlen(u.username)+1) * sizeof(char));
-    users[num_users-1].postal_code = (char * ) malloc((strlen(u.postal_code)+1) * sizeof(char));
+    users = (User * ) realloc(users, ((num_users) * sizeof(User)));
+    users[num_users - 1].username = (char * ) malloc((strlen(u.username) + 1) * sizeof(char));
+    users[num_users - 1].postal_code = (char * ) malloc((strlen(u.postal_code) + 1) * sizeof(char));
 
-    users[num_users-1].id = u.id;
-    strcpy(users[num_users-1].username, u.username);
-    strcpy(users[num_users-1].postal_code, u.postal_code);
-    users[num_users-1].file_descriptor = u.file_descriptor;
-    users[num_users-1].thread = u.thread;
+    users[num_users - 1].id = u.id;
+    strcpy(users[num_users - 1].username, u.username);
+    strcpy(users[num_users - 1].postal_code, u.postal_code);
+    users[num_users - 1].file_descriptor = u.file_descriptor;
+    users[num_users - 1].thread = u.thread;
 }
 
 /* ********************************************************************
@@ -309,16 +308,16 @@ User ATREIDES_receiveSearch(char data[240]) {
 void ATREIDES_receivePhoto(Photo p, int fd, int id) {
     Frame frame;
     int out, contador_trames = 0;
-    char * md5 = NULL, *out_file = NULL, cadena[200], *filename = NULL;
+    char * md5 = NULL, * out_file = NULL, cadena[200], * filename = NULL;
 
-    asprintf(&filename, "%d.jpg", users[id].id);
+    asprintf( & filename, "%d.jpg", users[id].id);
 
     sprintf(cadena, "Guardada com %s\n", filename);
     write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
 
-    asprintf(&out_file, "%s/%s", configuration.directory, filename);
+    asprintf( & out_file, "%s/%s", configuration.directory, filename);
     free(filename);
-    
+
     out = open(out_file, O_CREAT | O_WRONLY | O_TRUNC, 0666);
 
     int num_trames = p.file_size / 240;
@@ -330,7 +329,7 @@ void ATREIDES_receivePhoto(Photo p, int fd, int id) {
 
         frame = FRAME_CONFIG_receiveFrame(fd);
 
-        if (contador_trames == num_trames-1 && p.file_size % 240 != 0) {
+        if (contador_trames == num_trames - 1 && p.file_size % 240 != 0) {
             write(out, frame.data, p.file_size % 240);
         } else {
             write(out, frame.data, 240);
@@ -395,7 +394,6 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
     return p;
 }
 
-
 /* ********************************************************************
  *
  * @Nombre : ATREIDES_sendFrame
@@ -424,7 +422,7 @@ char * ATREIDES_searchUsers(User u) {
         }
     }
 
-    asprintf( &res, "%d", num_users_pc);
+    asprintf( & res, "%d", num_users_pc);
 
     memset(cadena_print, 0, sizeof(cadena_print));
     sprintf(cadena_print, "Feta la cerca\nHi ha %d persones humanes a %s\n", num_users_pc, u.postal_code);
@@ -438,7 +436,7 @@ char * ATREIDES_searchUsers(User u) {
             sprintf(cadena_print, "%d %s\n", users[i].id, users[i].username);
             write(STDOUT_FILENO, cadena_print, strlen(cadena_print));
 
-            asprintf(&cadena, "%s*%s*%d", res, users[i].username, users[i].id);
+            asprintf( & cadena, "%s*%s*%d", res, users[i].username, users[i].id);
             free(res);
             res = strdup(cadena);
             free(cadena);
@@ -481,7 +479,7 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             i = 0;
             for (i = 0; i < num_users; i++) {
-                if ( ( strcmp(u.username, users[i].username) == 0 ) && ( strcmp(u.postal_code, users[i].postal_code) == 0 ) ) {
+                if ((strcmp(u.username, users[i].username) == 0) && (strcmp(u.postal_code, users[i].postal_code) == 0)) {
                     u.id = users[i].id;
                     users[i].file_descriptor = fd;
                     users[i].thread = pthread_self();
@@ -538,10 +536,9 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             sprintf(cadena, "\nRebut send %s de %s %d\n", photo.file_name, users[u_id].username, users[u_id].id);
             write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
-            
+
             ATREIDES_receivePhoto(photo, fd, u_id);
             break;
-
 
         case 'Q':
             exit = 1;
@@ -575,7 +572,7 @@ void * ATREIDES_threadClient(void * fdClient) {
  *
  ********************************************************************* */
 ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
-    char caracter = ' ', * cadena = NULL, *temp = NULL;
+    char caracter = ' ', * cadena = NULL, * temp = NULL;
     int i = 0, fd, size = 0;
     ConfigAtreides c;
 
@@ -595,11 +592,11 @@ ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
         temp = IOSCREEN_readUntilIntro(fd, caracter, i);
         size = strlen(temp);
 
-        c.directory = (char *) malloc (sizeof(char) * size);
+        c.directory = (char * ) malloc(sizeof(char) * size);
         memset(c.directory, 0, size * sizeof(char));
 
         for (i = 1; temp[i] != '\0'; i++) {
-            c.directory[i-1] = temp[i];
+            c.directory[i - 1] = temp[i];
         }
 
         close(fd);

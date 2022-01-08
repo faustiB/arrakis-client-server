@@ -19,7 +19,6 @@
 #include <pthread.h>
 
 #include "frame_config.h"
-#include "semaphore_v2.h"
 
 #define printF(x) write(1, x, strlen(x))
 
