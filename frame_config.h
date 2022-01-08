@@ -20,5 +20,6 @@ typedef struct {
 char * FRAME_CONFIG_generateFrame(int origin);
 Frame FRAME_CONFIG_receiveFrame(int fd);
 char * FRAME_CONFIG_getMD5(char * file);
+char * FRAME_CONFIG_generateCustomFrame(int origin, char type, int isOk);
 
 #endif //_FRAME_CONFIG_H

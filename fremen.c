@@ -355,7 +355,7 @@ Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
 
     if (p.photo_fd < 0) {
         printF("La imatge no existeix...\n");
-    } else {
+    } else { 
         md5 = FRAME_CONFIG_getMD5(out_file);
 
         if (stat(out_file, & stats) == 0) {
@@ -378,8 +378,9 @@ Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
 
         free(data_to_send);
         free(md5);
-        free(out_file);
     }
+
+    free(out_file);
     return p;
 }
 
@@ -634,6 +635,15 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
                 if (p.photo_fd > 0) {
                     FREMEN_sendPhoto(p);
+
+                    Frame frame_received;
+                    frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
+
+                    if (frame_received.type == 'I') {
+                        printF("Foto enviada amb èxit a Atreides.. \n");
+                    } else {
+                        printF("Error a l'enviar la imatge a Atreides.. \n");
+                    }
                 }
 
                 free(frame);

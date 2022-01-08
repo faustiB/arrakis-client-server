@@ -75,6 +75,18 @@ void RsiControlC(void) {
 
 /* ********************************************************************
  *
+ * @Nombre : ATREIDES_sendFrame
+ * @Def : Envío de la trama
+ *
+ ********************************************************************* */
+void ATREIDES_sendFrame(int fd, char * frame) {
+    write(fd, frame, 256);
+    printF("Enviada resposta\n");
+}
+
+
+/* ********************************************************************
+ *
  * @Nombre : ATREIDES_generateFrameLogin
  * @Def : ceación y generación de la trama de respuesta para login.
  *
@@ -308,7 +320,7 @@ User ATREIDES_receiveSearch(char data[240]) {
 void ATREIDES_receivePhoto(Photo p, int fd, int id) {
     Frame frame;
     int out, contador_trames = 0;
-    char * md5 = NULL, * out_file = NULL, cadena[200], * filename = NULL;
+    char * md5 = NULL, * out_file = NULL, cadena[200], * filename = NULL, *trama = NULL;
 
     asprintf( & filename, "%d.jpg", users[id].id);
 
@@ -344,8 +356,12 @@ void ATREIDES_receivePhoto(Photo p, int fd, int id) {
     if (md5 != NULL) {
         if (strcmp(p.file_md5, md5) != 0) {
             printF("Error: Les fotos no són iguals! \n");
-            //Enviar trama error. 
+            trama = FRAME_CONFIG_generateCustomFrame(2, 'R', 1);
+        } else {
+            trama = FRAME_CONFIG_generateCustomFrame(2, 'I', 0);
         }
+        ATREIDES_sendFrame(fd, trama);
+        free(trama);
         free(md5);
     }
 
@@ -392,17 +408,6 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
     free(number);
 
     return p;
-}
-
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_sendFrame
- * @Def : Envío de la trama
- *
- ********************************************************************* */
-void ATREIDES_sendFrame(int fd, char * frame) {
-    write(fd, frame, 256);
-    printF("Enviada resposta\n");
 }
 
 /* ********************************************************************

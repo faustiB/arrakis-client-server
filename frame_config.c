@@ -61,6 +61,52 @@ char * FRAME_CONFIG_generateFrame(int origin) {
 
 /* ********************************************************************
  *
+ * @Nombre : FRAME_CONFIG_generateCustomFrame
+ * @Def : ceación de una trama customizada.
+ *
+ ********************************************************************* */
+char * FRAME_CONFIG_generateCustomFrame(int origin, char type, int isOk) {
+    char * frame, * aux = NULL;
+    int i = 0;
+    unsigned int j = 0;
+
+    frame = (char * ) malloc(sizeof(char) * 256);
+    aux = (char * ) malloc(sizeof(char) * 12);
+
+    memset(frame, 0, 256 * sizeof(char));
+
+    if (origin == 1) {
+        sprintf(frame, "FREMEN");
+    } else if (origin == 2){
+        sprintf(frame, "ATREIDES");
+    }
+
+    for (i = strlen(frame); i < 15; i++) {
+        frame[i] = '\0';
+    }
+
+    frame[15] = type;
+
+    if (isOk == 0) {
+        sprintf(aux, "IMATGE OK");
+    } else {
+        sprintf(aux, "IMATGE KO");
+    }
+
+    for (i = 16; aux[i - 16] != '\0'; i++) {
+        frame[i] = aux[i - 16];
+    }
+
+    for (j = i; j < 256; j++) {
+        frame[j] = '\0';
+    }
+
+    free(aux);
+    return frame;
+}
+
+/* ********************************************************************
+ *
  * @Nombre : FRAME_CONFIG__getMD5
  * @Def : Obtención md5
  *
