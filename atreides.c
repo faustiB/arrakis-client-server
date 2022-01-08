@@ -32,7 +32,7 @@ void UpdateFile() {
         for (int i = 0; i < num_users; i++) {
             sprintf(cadena, "%d-%s-%s\n", users[i].id, users[i].username, users[i].postal_code);
             write(fd, cadena, sizeof(char) * strlen(cadena));
-            memset(cadena,0,strlen(cadena));
+            memset(cadena,0,strlen(cadena));memset(cadena,0,strlen(cadena));
         }
 
         close(fd);
@@ -206,6 +206,19 @@ void ATREIDES_addUser(User u) {
 
 /* ********************************************************************
  *
+ * @Nombre : ATREIDES_getUserByFD
+ * @Def : ...
+ *
+ ********************************************************************* */
+int ATREIDES_getUserByFD(int fd) {
+    for (int i = 0; i < num_users; i++) {
+        if (fd == users[i].file_descriptor) return i;
+    }
+    return -1;
+}
+
+/* ********************************************************************
+ *
  * @Nombre : ATREIDES_receiveUser
  * @Def : Recepcion de usuario
  *
@@ -293,13 +306,19 @@ User ATREIDES_receiveSearch(char data[240]) {
     return u;
 }
 
-void ATREIDES_receivePhoto(Photo p, int fd) {
+void ATREIDES_receivePhoto(Photo p, int fd, int id) {
     Frame frame;
     int out, contador_trames = 0;
-    char * md5 = NULL, *out_file = NULL;
+    char * md5 = NULL, *out_file = NULL, cadena[200], *filename = NULL;
 
-    asprintf(&out_file, "out_photos/%s", p.file_name);
+    asprintf(&filename, "%d.jpg", users[id].id);
 
+    sprintf(cadena, "Guardada com %s\n", filename);
+    write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
+
+    asprintf(&out_file, "%s/%s", configuration.directory, filename);
+    free(filename);
+    
     out = open(out_file, O_CREAT | O_WRONLY | O_TRUNC, 0666);
 
     int num_trames = p.file_size / 240;
@@ -324,10 +343,9 @@ void ATREIDES_receivePhoto(Photo p, int fd) {
     md5 = FRAME_CONFIG_getMD5(out_file);
 
     if (md5 != NULL) {
-        if (strcmp(p.file_md5, md5) == 0) {
-            printF("Les fotos són iguals! \n");
-        } else {
+        if (strcmp(p.file_md5, md5) != 0) {
             printF("Error: Les fotos no són iguals! \n");
+            //Enviar trama error. 
         }
         free(md5);
     }
@@ -378,8 +396,6 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
 }
 
 
-
-
 /* ********************************************************************
  *
  * @Nombre : ATREIDES_sendFrame
@@ -400,7 +416,7 @@ void ATREIDES_sendFrame(int fd, char * frame) {
 char * ATREIDES_searchUsers(User u) {
 
     int num_users_pc = 0, i;
-    char * res = NULL, * cadena;
+    char * res = NULL, * cadena, cadena_print[200];
 
     for (i = 0; i < num_users; i++) {
         if (strcmp(users[i].postal_code, u.postal_code) == 0) {
@@ -410,8 +426,18 @@ char * ATREIDES_searchUsers(User u) {
 
     asprintf( &res, "%d", num_users_pc);
 
+    memset(cadena_print, 0, sizeof(cadena_print));
+    sprintf(cadena_print, "Feta la cerca\nHi ha %d persones humanes a %s\n", num_users_pc, u.postal_code);
+    write(STDOUT_FILENO, cadena_print, strlen(cadena_print));
+
     for (i = 0; i < num_users; i++) {
         if (strcmp(u.postal_code, users[i].postal_code) == 0) {
+
+            //Imprimim les persones trobades.
+            memset(cadena_print, 0, sizeof(cadena_print));
+            sprintf(cadena_print, "%d %s\n", users[i].id, users[i].username);
+            write(STDOUT_FILENO, cadena_print, strlen(cadena_print));
+
             asprintf(&cadena, "%s*%s*%d", res, users[i].username, users[i].id);
             free(res);
             res = strdup(cadena);
@@ -508,10 +534,12 @@ void * ATREIDES_threadClient(void * fdClient) {
             //send
 
             photo = ATREIDES_receiveSendInfo(frame.data);
-            sprintf(cadena, "\nRebut send %s\n", photo.file_name);
+            int u_id = ATREIDES_getUserByFD(fd);
+
+            sprintf(cadena, "\nRebut send %s de %s %d\n", photo.file_name, users[u_id].username, users[u_id].id);
             write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
             
-            ATREIDES_receivePhoto(photo, fd);
+            ATREIDES_receivePhoto(photo, fd, u_id);
             break;
 
 
@@ -547,8 +575,8 @@ void * ATREIDES_threadClient(void * fdClient) {
  *
  ********************************************************************* */
 ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
-    char caracter = ' ', * cadena = NULL;
-    int i = 0, fd;
+    char caracter = ' ', * cadena = NULL, *temp = NULL;
+    int i = 0, fd, size = 0;
     ConfigAtreides c;
 
     //Apertura del fichero
@@ -564,8 +592,18 @@ ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
         c.port = atoi(cadena);
         free(cadena);
 
-        c.directory = IOSCREEN_readUntilIntro(fd, caracter, i);
+        temp = IOSCREEN_readUntilIntro(fd, caracter, i);
+        size = strlen(temp);
+
+        c.directory = (char *) malloc (sizeof(char) * size);
+        memset(c.directory, 0, size * sizeof(char));
+
+        for (i = 1; temp[i] != '\0'; i++) {
+            c.directory[i-1] = temp[i];
+        }
+
         close(fd);
+        free(temp);
         printF("Llegit el fitxer de configuració\n");
     }
 
@@ -582,7 +620,7 @@ ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
 
 int ATREIDES_configSocket(ConfigAtreides config) {
 
-    struct sockaddr_in s_addr; //cliente_addr;
+    struct sockaddr_in s_addr;
     int fdSocket = -1;
 
     fdSocket = socket(AF_INET, SOCK_STREAM, 0);
