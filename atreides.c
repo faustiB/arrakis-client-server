@@ -84,6 +84,15 @@ void ATREIDES_sendFrame(int fd, char * frame) {
     printF("Enviada resposta\n");
 }
 
+/* ********************************************************************
+ *
+ * @Nombre : ATREIDES_sendPhotoData
+ * @Def : Envío de la trama de photo
+ *
+ ********************************************************************* */
+void ATREIDES_sendPhotoData(int fd, char * frame) {
+    write(fd, frame, 256);
+}
 
 /* ********************************************************************
  *
@@ -320,7 +329,7 @@ User ATREIDES_receiveSearch(char data[240]) {
 void ATREIDES_receivePhoto(Photo p, int fd, int id) {
     Frame frame;
     int out, contador_trames = 0;
-    char * md5 = NULL, * out_file = NULL, cadena[200], * filename = NULL, *trama = NULL;
+    char * md5 = NULL, * out_file = NULL, cadena[200], * filename = NULL, * trama = NULL;
 
     asprintf( & filename, "%d.jpg", users[id].id);
 
@@ -410,6 +419,113 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
     return p;
 }
 
+int ATREIDES_checkPhoto(char data[240]) {
+    char * out_file = NULL, * filename = NULL;
+    int photo_fd;
+
+    asprintf( & filename, "%s.jpg", data);
+
+    asprintf( & out_file, "%s/%s", configuration.directory, filename);
+
+    free(filename);
+
+    photo_fd = open(out_file, O_RDONLY);
+    free(out_file);
+
+    return photo_fd;
+}
+
+Photo ATREIDES_generatePhotoInfo (Photo p, char data[240], int fd) {
+    struct stat stats;
+    char * filename = NULL, * out_file = NULL, * md5 = NULL, * data_to_send = NULL, * frame = NULL;
+    int i, j;
+
+    asprintf( & filename, "%s.jpg", data);
+    strcpy(p.file_name, filename);
+    free(filename);
+
+    asprintf( & out_file, "%s/%s", configuration.directory, p.file_name);
+
+    md5 = FRAME_CONFIG_getMD5(out_file);
+    strcpy(p.file_md5, md5);
+    free(md5);
+
+    if (stat(out_file, & stats) == 0) {
+        p.file_size = stats.st_size;
+    }
+
+    asprintf( & data_to_send, "%s*%d*%s", p.file_name, p.file_size, p.file_md5);
+
+    frame = FRAME_CONFIG_generateFrame(2);
+
+    frame[15] = 'F';
+
+    for (i = 16; data_to_send[i - 16] != '\0'; i++) {
+        frame[i] = data_to_send[i - 16];
+    }
+
+    for (j = i; j < 256; j++) {
+        frame[j] = '\0';
+    }
+
+    ATREIDES_sendFrame(fd, frame);
+
+    free(data_to_send);
+    free(frame);
+    free(out_file);
+
+    return p;
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : ATREIDES_generateFrameSend
+ * @Def : ceación de la trama send
+ *
+ ********************************************************************* */
+void ATREIDES_generateFrameSend (char * frame, char type, char data[240]) {
+    int i = 0;
+
+    frame[15] = type;
+
+    for (i = 16; i < 256; i++) {
+        frame[i] = data[i - 16];
+    }
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : ATREIDES_sendPhoto
+ * @Def : ceación y generación de las tramas de send.
+ *
+ ********************************************************************* */
+void ATREIDES_sendPhoto(Photo p, int user_fd) {
+    int contador_trames = 0, num_trames = 0;
+    char * frame, buffer[240];
+
+    num_trames = p.file_size / 240;
+    if (p.file_size % 240 != 0) {
+        num_trames++;
+    }
+
+    while (contador_trames < num_trames) {
+        memset(buffer, 0, sizeof(buffer));
+        read(p.photo_fd, buffer, 240);
+
+        frame = FRAME_CONFIG_generateFrame(2);
+        ATREIDES_generateFrameSend(frame, 'D', buffer);
+
+        ATREIDES_sendPhotoData(user_fd, frame);
+
+        contador_trames++;
+
+        free(frame);
+        usleep(300);
+    }
+
+    close(p.photo_fd);
+}
+
 /* ********************************************************************
  *
  * @Nombre : ATREIDES_searchUsers
@@ -462,9 +578,9 @@ void * ATREIDES_threadClient(void * fdClient) {
     int fd = * ((int * ) fdClient);
 
     Frame frame;
-    int i, exit;
+    int i, exit, u_id;
     User u;
-    char * frame_send, cadena[100], * search_data;
+    char * frame_send, cadena[300], * search_data;
     Photo photo;
 
     exit = 0;
@@ -537,12 +653,37 @@ void * ATREIDES_threadClient(void * fdClient) {
             //send
 
             photo = ATREIDES_receiveSendInfo(frame.data);
-            int u_id = ATREIDES_getUserByFD(fd);
+            u_id = ATREIDES_getUserByFD(fd);
 
             sprintf(cadena, "\nRebut send %s de %s %d\n", photo.file_name, users[u_id].username, users[u_id].id);
             write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
 
             ATREIDES_receivePhoto(photo, fd, u_id);
+            break;
+
+        case 'P':
+            //photo
+
+            u_id = ATREIDES_getUserByFD(fd);
+
+            sprintf(cadena, "\nRebut photo %s de %s %d\n", frame.data, users[u_id].username, users[u_id].id);
+            write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
+
+            int photo_fd = ATREIDES_checkPhoto(frame.data);
+
+            if (photo_fd > 0) {
+                Photo p;
+
+                p.photo_fd = photo_fd;
+
+                p = ATREIDES_generatePhotoInfo(p, frame.data, fd);
+                ATREIDES_sendPhoto(p, fd);
+                
+                close(photo_fd);
+            } else {
+                printF("No hi ha foto registrada.\n");
+                //Enviar trama error.
+            }
             break;
 
         case 'Q':

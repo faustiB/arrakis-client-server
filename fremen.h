@@ -28,10 +28,4 @@ typedef struct {
     char *directory;
 } ConfigFremen;
 
-typedef struct {
-    char file_name[30];
-    int file_size;
-    int photo_fd;
-} Photo;
-
 #endif //_FREMEN_H

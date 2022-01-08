@@ -384,6 +384,48 @@ Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
     return p;
 }
 
+Photo FREMEN_receivePhotoInfo(char data[240]) {
+    int i, j, k;
+    Photo p;
+    char * number;
+
+    i = 0;
+
+    while (data[i] != '*') {
+        p.file_name[i] = data[i];
+        i++;
+    }
+    p.file_name[i] = '\0';
+    i++;
+
+    j = 0;
+    number = (char * ) malloc(1 * sizeof(char));
+
+    while (data[i] != '*') {
+        number[j] = data[i];
+        number = (char * ) realloc(number, j + 2);
+        i++;
+        j++;
+    }
+    number[j] = '\0';
+    i++;
+
+    p.file_size = atoi(number);
+
+    k = 0;
+
+    while (data[i] != '\0') {
+        p.file_md5[k] = data[i];
+        i++;
+        k++;
+    }
+    p.file_md5[k] = '\0';
+
+    free(number);
+
+    return p;
+}
+
 /* ********************************************************************
  *
  * @Nombre : FREMEN_generateFrameSend
@@ -431,6 +473,74 @@ void FREMEN_sendPhoto(Photo p) {
     }
 
     close(p.photo_fd);
+}
+
+/* ********************************************************************
+ *
+ * @Nombre : FREMEN_generateFramePhoto
+ * @Def : ceación de la trama send
+ *
+ ********************************************************************* */
+void FREMEN_generateFramePhoto(char * frame, char type, char data[240]) {
+    int i = 0, j = 0;
+
+    frame[15] = type;
+
+    for (i = 16; data[i - 16] != '\0'; i++) {
+        frame[i] = data[i - 16];
+    }
+
+    for (j = i; j < 256; j++) {
+        frame[j] = '\0';
+    }
+}
+
+void FREMEN_receivePhoto(Photo p) {
+    Frame frame;
+    int out, contador_trames = 0;
+    char * md5 = NULL, * out_file = NULL, cadena[200], * trama = NULL;
+
+    sprintf(cadena, "Guardada com %s\n", p.file_name);
+    write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
+
+    asprintf( & out_file, "%s/%s", configuration.directory, p.file_name);
+
+    out = open(out_file, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+
+    int num_trames = p.file_size / 240;
+    if (p.file_size % 240 != 0) {
+        num_trames++;
+    }
+
+    while (contador_trames < num_trames) {
+
+        frame = FRAME_CONFIG_receiveFrame(socket_fd);
+
+        if (contador_trames == num_trames - 1 && p.file_size % 240 != 0) {
+            write(out, frame.data, p.file_size % 240);
+        } else {
+            write(out, frame.data, 240);
+        }
+
+        contador_trames++;
+    }
+    close(out);
+
+    md5 = FRAME_CONFIG_getMD5(out_file);
+
+    if (md5 != NULL) {
+        if (strcmp(p.file_md5, md5) != 0) {
+            printF("Error: Les fotos no són iguals! \n");
+            trama = FRAME_CONFIG_generateCustomFrame(1, 'R', 1);
+        } else {
+            trama = FRAME_CONFIG_generateCustomFrame(1, 'I', 0);
+        }
+        FREMEN_sendFrame(socket_fd, trama);
+        free(trama);
+        free(md5);
+    }
+
+    free(out_file);
 }
 
 /* ********************************************************************
@@ -652,7 +762,23 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             }
 
         } else if (strcasecmp(command_array[0], "photo") == 0) {
-            //Implementar fase 3
+            if (socket_fd > 0) {
+                frame = NULL;
+
+                frame = FRAME_CONFIG_generateFrame(1);
+                FREMEN_generateFramePhoto(frame, 'P', command_array[1]);
+                FREMEN_sendFrame(socket_fd, frame);
+
+                Frame frame_received;
+                frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
+                Photo p = FREMEN_receivePhotoInfo(frame_received.data);
+
+                FREMEN_receivePhoto(p);
+
+                free(frame);
+            } else {
+                printF("No es pot enviar la imatge perque no esteu loginats al servidor... \n");
+            }
         }
 
         FREMEN_freeMemory(command, command_array);

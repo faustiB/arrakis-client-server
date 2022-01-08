@@ -17,6 +17,13 @@ typedef struct {
     char data[240];
 } Frame;
 
+typedef struct {
+    char file_name[30];
+    int file_size;
+    char file_md5[35];
+    int photo_fd;
+} Photo;
+
 char * FRAME_CONFIG_generateFrame(int origin);
 Frame FRAME_CONFIG_receiveFrame(int fd);
 char * FRAME_CONFIG_getMD5(char * file);
