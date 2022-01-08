@@ -89,7 +89,7 @@ void RsiControlC(void) {
  *
  ********************************************************************* */
 ConfigFremen FREMEN_fillConfiguration(char * argv) {
-    char caracter = ' ', * cadena = NULL, * temp = NULL;
+    char caracter = ' ', * cadena = NULL, *temp = NULL;
     int i = 0, fd, size = 0;
     ConfigFremen c;
 
@@ -116,11 +116,11 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
         temp = IOSCREEN_readUntilIntro(fd, caracter, i);
         size = strlen(temp);
 
-        c.directory = (char * ) malloc(sizeof(char) * size);
+        c.directory = (char *) malloc (sizeof(char) * size);
         memset(c.directory, 0, size * sizeof(char));
 
         for (i = 1; temp[i] != '\0'; i++) {
-            c.directory[i - 1] = temp[i];
+            c.directory[i-1] = temp[i];
         }
 
         close(fd);
@@ -143,14 +143,15 @@ void FREMEN_freeMemory(char * command, char ** command_array) {
     free(command_array);
 }
 
-int FREMEN_checkInputOnlyNumber(char * input) {
+
+int FREMEN_checkInputOnlyNumber(char * input){
 
     unsigned int i = 0;
-    int count = 0;
+    int  count = 0;
 
-    for (i = 0; i < strlen(input); i++) {
+    for (i = 0; i < strlen(input); i++){
 
-        if (input[i] >= '0' && input[i] <= '9') {
+        if (input[i]>='0' && input[i]<='9') {
             count++;
         }
 
@@ -179,6 +180,8 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
                 printF("Comanda KO. Codi Postal incorrecte, només números.\n");
                 return 1;
             }
+
+
             return 0;
         } else if (words < 3) {
             printF("Comanda KO. Falta paràmetres\n");
@@ -188,8 +191,15 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
         return 1;
     } else if (strcasecmp(command, "search") == 0) {
         if (words == 2) {
-            //printF("Comanda OK.\n");
-            return 0;
+            unsigned int checkOnlyNumber;
+
+            checkOnlyNumber = FREMEN_checkInputOnlyNumber(command_array[1]);
+            if (checkOnlyNumber == strlen(command_array[1])) {
+                return 0;
+            } else {
+                printF("Comanda KO. Codi Postal incorrecte, només números.\n");
+                return 1;
+            }
         } else if (words < 2) {
             printF("Comanda KO. Falta paràmetres\n");
         } else {
@@ -344,21 +354,19 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
  ********************************************************************* */
 Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
     int i = 0, j = 0;
-    char * md5 = NULL, * data_to_send, *out_file = NULL;
+    char * md5 = NULL, * data_to_send;
     struct stat stats;
     Photo p;
 
     strcpy(p.file_name, file);
-    asprintf( & out_file, "%s/%s", configuration.directory, p.file_name);
-
-    p.photo_fd = open(out_file, O_RDONLY);
+    p.photo_fd = open(file, O_RDONLY);
 
     if (p.photo_fd < 0) {
         printF("La imatge no existeix...\n");
-    } else { 
-        md5 = FRAME_CONFIG_getMD5(out_file);
+    } else {
+        md5 = FRAME_CONFIG_getMD5(file);
 
-        if (stat(out_file, & stats) == 0) {
+        if (stat(file, & stats) == 0) {
             p.file_size = stats.st_size;
         }
 
@@ -379,8 +387,6 @@ Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
         free(data_to_send);
         free(md5);
     }
-
-    free(out_file);
     return p;
 }
 
@@ -408,7 +414,7 @@ void FREMEN_generateFrameSend(char * frame, char type, char data[240]) {
  ********************************************************************* */
 void FREMEN_sendPhoto(Photo p) {
     int contador_trames = 0, num_trames = 0;
-    char * frame, buffer[240];
+    char *frame, buffer[240];
 
     num_trames = p.file_size / 240;
     if (p.file_size % 240 != 0) {
@@ -432,6 +438,7 @@ void FREMEN_sendPhoto(Photo p) {
 
     close(p.photo_fd);
 }
+
 
 /* ********************************************************************
  *
@@ -501,6 +508,10 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
         write(STDOUT_FILENO, cadena, strlen(cadena));
     }
 }
+
+
+
+
 
 /* ********************************************************************
  *
@@ -574,27 +585,31 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
                 if (socket_fd > 0) {
 
-                    frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
-                    FREMEN_sendFrame(socket_fd, frame);
-                    printF("Conectado al servidor\n");
-                    Frame frame_received;
-                    frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
-                    if (frame_received.type == 'O') {
-                        control_login = 1;
+                        frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
+                        FREMEN_sendFrame(socket_fd, frame);
+                        printF("Connecat al servidor\n");
+                        Frame frame_received;
+                        frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
-                        user_id = atoi(frame_received.data);
-                        user_name = (char * ) malloc(sizeof(char) * strlen(command_array[1]) + 1);
-                        strcpy(user_name, command_array[1]);
+                        if (frame_received.type == 'O') {
+                            control_login = 1;
 
-                        sprintf(cadena, "Benvingut %s. Tens ID: %d. \n", user_name, user_id);
-                        write(STDOUT_FILENO, cadena, strlen(cadena));
+                            user_id = atoi(frame_received.data);
+                            user_name = (char * ) malloc(sizeof(char) * strlen(command_array[1]) + 1);
+                            strcpy(user_name, command_array[1]);
 
-                        printF("Ara estàs connectat a Atreides.\n");
+                            sprintf(cadena, "Benvingut %s. Tens ID: %d. \n", user_name, user_id);
+                            write(STDOUT_FILENO, cadena, strlen(cadena));
 
-                    } else if (frame_received.type == 'E') {
-                        printF("Error a l'hora de fer el login. \n");
-                    }
+                            printF("Ara estàs connectat a Atreides.\n");
+
+                        } else if (frame_received.type == 'E') {
+                            printF("Error a l'hora de fer el login. \n");
+                        }
+
+
+
 
                 } else {
                     printF("No puc fer login, sembla que Atreides està aturat...\n");
@@ -635,21 +650,14 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
                 if (p.photo_fd > 0) {
                     FREMEN_sendPhoto(p);
-
-                    Frame frame_received;
-                    frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
-
-                    if (frame_received.type == 'I') {
-                        printF("Foto enviada amb èxit a Atreides.. \n");
-                    } else {
-                        printF("Error a l'enviar la imatge a Atreides.. \n");
-                    }
                 }
 
                 free(frame);
             } else {
                 printF("No es pot enviar la imatge perque no esteu loginats al servidor... \n");
             }
+
+
 
         } else if (strcasecmp(command_array[0], "photo") == 0) {
             //Implementar fase 3
