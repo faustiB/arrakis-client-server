@@ -6,18 +6,20 @@
 *
 ************************************************/
 
+//Llibreries pròpies
 #include "fremen.h"
 #include "ioscreen.h"
 
-
 void RsiControlC(void);
+
+//Variables globals
 ConfigFremen configuration;
 int socket_fd, user_id, control_login;
 char * user_name;
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_sendFrame
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -29,7 +31,7 @@ void FREMEN_sendFrame(int fd, char * frame) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_generateFrameLogout
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -57,7 +59,7 @@ char * FREMEN_generateFrameLogout(char * frame, char type) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: RsiControlC
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -65,7 +67,7 @@ char * FREMEN_generateFrameLogout(char * frame, char type) {
 ************************************************/
 void RsiControlC(void) {
 
-    //Printamos el mensaje de adiós al sistema
+    //Printem el missatge de final d'execució.
     printF("\n\nAturant Fremen... \n\n");
 
     free(configuration.ip);
@@ -90,14 +92,14 @@ void RsiControlC(void) {
     free(user_name);
     close(socket_fd);
 
-    //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
+    //Acabem el programa enviant-nos a nosaltres mateixos el sigint.
     signal(SIGINT, SIG_DFL);
     raise(SIGINT);
 }
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_fillConfiguration
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -108,7 +110,7 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
     int i = 0, fd, size = 0;
     ConfigFremen c;
 
-    //Apertura del fichero
+    //Obertura del fitxer.
     fd = open(argv, O_RDONLY);
 
     if (fd < 0) {
@@ -140,13 +142,13 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
         free(temp);
     }
 
-    //Lectura del fichero de configuración y cierre de su file descriptor.
+    //Lectura del fitxer de config i tancament del file descriptor.
     return c;
 }
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_freeMemory
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -159,7 +161,7 @@ void FREMEN_freeMemory(char * command, char ** command_array) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_checkInputOnlyNumber
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -171,11 +173,9 @@ int FREMEN_checkInputOnlyNumber(char * input) {
     int count = 0;
 
     for (i = 0; i < strlen(input); i++) {
-
         if (input[i] >= '0' && input[i] <= '9') {
             count++;
         }
-
     }
 
     return count;
@@ -184,7 +184,7 @@ int FREMEN_checkInputOnlyNumber(char * input) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_checkNumberOfWords
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -256,14 +256,14 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
         return 1;
     }
 
-    //Si no es ninguno de los comandos anteriores, se devuelve 2 porque seguramente
-    //sea un comando linux. Así se ejecuta en contra el sistema.
+    //Si no és cap de les opcions es retorna un nombre 2 ja que segurament
+    //sigui una comanda linux.
     return 2;
 }
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_configSocket
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -297,7 +297,7 @@ int FREMEN_configSocket(ConfigFremen config, char * command, char ** command_arr
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_login
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -312,7 +312,7 @@ void FREMEN_login(ConfigFremen configuration, char * command, char ** command_ar
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_generateFrameLogin
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -341,7 +341,7 @@ char * FREMEN_generateFrameLogin(char * frame, char type, char * name, char * zi
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_generateFrameSearch
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -373,7 +373,7 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_sendInfoPhoto
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -421,6 +421,14 @@ Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
     return p;
 }
 
+/***********************************************
+*
+* @Nom: FREMEN_receivePhotoInfo
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 Photo FREMEN_receivePhotoInfo(char data[240]) {
     int i, j, k;
     Photo p;
@@ -465,7 +473,7 @@ Photo FREMEN_receivePhotoInfo(char data[240]) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_generateFrameSend
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -483,7 +491,7 @@ void FREMEN_generateFrameSend(char * frame, char type, char data[240]) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_sendPhoto
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -518,7 +526,7 @@ void FREMEN_sendPhoto(Photo p) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_generateFramePhoto
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -538,6 +546,14 @@ void FREMEN_generateFramePhoto(char * frame, char type, char data[240]) {
     }
 }
 
+/***********************************************
+*
+* @Nom: FREMEN_receivePhoto
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void FREMEN_receivePhoto(Photo p) {
     Frame frame;
     int out, contador_trames = 0;
@@ -588,7 +604,7 @@ void FREMEN_receivePhoto(Photo p) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_countAsterisk
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -606,7 +622,7 @@ int FREMEN_countAsterisk(int num_asterics, char data[240]) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_showSearchReceived
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -692,7 +708,7 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: FREMEN_promptChoice
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -704,23 +720,23 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
     int i = 0, num_of_words = 0, isok = 0;
     Photo p;
 
-    //Lectura por pantalla del comando y tratado para quedarnos con una cadena
+    //Lectura per pantalla de la comanda y tractament per quedar-nos amb una cadena.
     printF("$ ");
     command = IOSCREEN_readUntilIntro(STDIN_FILENO, '\n', 0);
 
-    //Intro vacío
+    //Revisió si la cadena només conté intros.
     if (command[0] == '\0') {
         free(command);
         return 0;
     }
 
-    //Cadena de espacios
+    //Revisió si la cadena només conté espais.
     if (IOSCREEN_isEmpty(command) == 1) {
         free(command);
         return 0;
     }
 
-    //Tratamiento del comando para separar la cadena de entrada.
+    //Tractament del comand per separar la comanda de sortida.
     command_array = (char ** ) malloc(sizeof(char * ));
     command_array[i] = strtok(command, " ");
 
@@ -730,10 +746,10 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
         command_array[++i] = strtok(NULL, " ");
     }
 
-    //Checkeo del número de parametros.
+    //Check del nombre de parametres.
     isok = FREMEN_checkNumberOfWords(command_array[0], num_of_words, command_array);
 
-    //Comando custom OK
+    //Comanda custom ok
     if (isok == 0) {
         if (strcasecmp(command_array[0], "logout") == 0) {
             if (socket_fd > 0) {
@@ -869,25 +885,23 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
         FREMEN_freeMemory(command, command_array);
 
         return 1;
-        //Comando custom KO, por parametros
+        //Comanda custom KO, per parametros
     } else if (isok == 1) {
         FREMEN_freeMemory(command, command_array);
         free(frame);
         return 0;
-
-        //Cuando el  valor retornado sea 2, se abrirá un fork para ejecutar la comanda contra el sistema
     } else {
         pid_t pid;
 
-        //Creación del fork
+        //Creació del fork
         if ((pid = fork()) < 0) {
             FREMEN_freeMemory(command, command_array);
             printF("Error al crear el Fork\n");
             exit(1);
         }
-        //Entrada al código del hijo.
+        //Entrada al codi del fill.
         else if (pid == 0) {
-            //Ejecución del comando +  tratamiento si ha ido mal
+            //Execució de la comanda i tractament si ha anat malament.
             if (execvp(command_array[0], command_array) < 0) {
 
                 free(user_name);
@@ -901,12 +915,12 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 printF("Error al executar la comanda!\n");
                 exit(EXIT_FAILURE);
             }
-            //Código del padre
+            //Codi del pare
         } else {
-            //Espera a la ejecución del comando.
+            //Espera a la execució de la comanda
             wait(NULL);
 
-            //liberacion de memoria
+            //alliberament de memoria
             FREMEN_freeMemory(command, command_array);
         }
         return 0;
@@ -915,8 +929,8 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
 /***********************************************
 *
-* @Nom:
-* @Finalitat:
+* @Nom: Main
+* @Finalitat: control flow of the program.
 * @Parametres:
 * @Retorn:
 *
@@ -925,18 +939,19 @@ int main(int argc, char ** argv) {
 
     int command = 0;
 
-    //Check de argumentos de entrada
+    //Check dels arguments d'entrada
     if (argc != 2) {
         printF("Error, falta el nom de fitxer de configuracio.\n");
         return -1;
     }
 
-    //Assignación del signal de CtrlC a nuestra función
+    //Assignació del signal de CtrlC a la nostra funció
     signal(SIGINT, (void * ) RsiControlC);
-    //Lectura del fichero de configuración y cierre de su file descriptor.
+
+    //Lectura del fitxer de configuració i tancament del seu file descriptor.
     configuration = FREMEN_fillConfiguration(argv[1]);
 
-    //Inicialización de fremen.
+    //Inicializació de fremen.
     printF("Benvingut a Fremen\n");
     while (command == 0 || command == 1) {
         command = FREMEN_promptChoice(configuration);

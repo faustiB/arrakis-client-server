@@ -6,11 +6,13 @@
 *
 ************************************************/
 
+//Llibreries pròpies
 #include "atreides.h"
 #include "ioscreen.h"
 
 void RsiControlC(void);
 
+//Variables globals
 ConfigAtreides configuration;
 int num_users, socket_fd;
 User * users;
@@ -18,7 +20,7 @@ pthread_mutex_t lock;
 
 /***********************************************
 *
-* @Nom:
+* @Nom: UpdateFile
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -51,14 +53,14 @@ void UpdateFile() {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: RsiControlC
 * @Finalitat:
 * @Parametres:
 * @Retorn:
 *
 ************************************************/
 void RsiControlC(void) {
-    //Printamos el mensaje de adiós al sistema
+    //Printem el missatge d'adeu del sistema
     printF("\n\nDesconnectat d’Atreides. Dew!\n\n");
 
     free(configuration.ip);
@@ -82,14 +84,14 @@ void RsiControlC(void) {
 
     pthread_mutex_destroy( & lock);
 
-    //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
+    //Acabem el programa enviant-nos a nosaltres mateixos el sigint.
     signal(SIGINT, SIG_DFL);
     raise(SIGINT);
 }
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_sendFrame
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -102,7 +104,7 @@ void ATREIDES_sendFrame(int fd, char * frame) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_sendPhotoData
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -114,7 +116,7 @@ void ATREIDES_sendPhotoData(int fd, char * frame) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_generateFrameLogin
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -146,7 +148,7 @@ char * ATREIDES_generateFrameLogin(char * frame, char type, int id) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_generateFrameSearch
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -171,7 +173,7 @@ char * ATREIDES_generateFrameSearch(char * frame, char type, char * str) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_fillUsers
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -182,7 +184,7 @@ User * ATREIDES_fillUsers() {
     int fd, i = 0;
     User * users_read;
 
-    //Apertura del fichero
+    //Obertura del fitxer
     fd = open("Atreides/users_memory.txt", O_RDONLY);
 
     if (fd < 0) {
@@ -231,7 +233,7 @@ User * ATREIDES_fillUsers() {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_addUser
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -252,7 +254,7 @@ void ATREIDES_addUser(User u) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_getUserByFD
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -267,7 +269,7 @@ int ATREIDES_getUserByFD(int fd) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_receiveUser
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -299,7 +301,7 @@ User ATREIDES_receiveUser(char data[240]) {
     }
     u.postal_code[j] = '\0';
 
-    //set del id a 0 , en el caso que tenga, si no tiene se le asignará uno nuevo .
+    //set del id d'usuari a 0. Després es reassignarà.
     u.id = 0;
 
     return u;
@@ -307,7 +309,7 @@ User ATREIDES_receiveUser(char data[240]) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_receiveSearch
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -360,7 +362,7 @@ User ATREIDES_receiveSearch(char data[240]) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_receivePhoto
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -419,7 +421,7 @@ void ATREIDES_receivePhoto(Photo p, int fd, int id) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_receiveSendInfo
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -469,7 +471,7 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_checkPhoto
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -493,7 +495,7 @@ int ATREIDES_checkPhoto(char data[240]) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_generatePhotoInfo
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -543,7 +545,7 @@ Photo ATREIDES_generatePhotoInfo(Photo p, char data[240], int fd) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_generateFrameSend
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -561,7 +563,7 @@ void ATREIDES_generateFrameSend(char * frame, char type, char data[240]) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_sendPhoto
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -596,7 +598,7 @@ void ATREIDES_sendPhoto(Photo p, int user_fd) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_searchUsers
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -651,7 +653,7 @@ char * ATREIDES_searchUsers(User u, int fd) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_threadClient
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -672,10 +674,9 @@ void * ATREIDES_threadClient(void * fdClient) {
 
         frame = FRAME_CONFIG_receiveFrame(fd);
 
-        //mirar tipo y casuística.
         switch (frame.type) {
         case 'C':
-            //Login
+            //Cas trama login
             u = ATREIDES_receiveUser(frame.data);
 
             //assignem el file descriptor obert per tancarlo al final
@@ -716,7 +717,7 @@ void * ATREIDES_threadClient(void * fdClient) {
             break;
 
         case 'S':
-            //search
+            //Cas trama Search
             u = ATREIDES_receiveSearch(frame.data);
 
             sprintf(cadena, "\nRebut Search %s de %s %d\n", u.postal_code, u.username, u.id);
@@ -736,7 +737,7 @@ void * ATREIDES_threadClient(void * fdClient) {
             break;
 
         case 'F':
-            //send
+            //Cas trama Send
 
             photo = ATREIDES_receiveSendInfo(frame.data);
             u_id = ATREIDES_getUserByFD(fd);
@@ -748,7 +749,7 @@ void * ATREIDES_threadClient(void * fdClient) {
             break;
 
         case 'P':
-            //photo
+            //Cas trama Photo
 
             u_id = ATREIDES_getUserByFD(fd);
 
@@ -783,7 +784,7 @@ void * ATREIDES_threadClient(void * fdClient) {
             sprintf(cadena, "\nRebut Logout de  %s %s \nDesconnectat d'Atreides.\n", u.username, u.postal_code);
             write(STDOUT_FILENO, cadena, strlen(cadena));
 
-            //guardarem el pid del thread per a dins de la rsi, poder tancar-lo. Afegir valor al user.
+            //Guardem el pid del thread per a dins de la rsi poder tancar-lo.
             pthread_detach(pthread_self());
             pthread_cancel(pthread_self());
 
@@ -802,7 +803,7 @@ void * ATREIDES_threadClient(void * fdClient) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_fillConfiguration
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -813,7 +814,7 @@ ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
     int i = 0, fd, size = 0;
     ConfigAtreides c;
 
-    //Apertura del fichero
+    //Obertura del fitxer
     fd = open(argv, O_RDONLY);
 
     if (fd < 0) {
@@ -846,7 +847,7 @@ ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: ATREIDES_configSocket
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -880,7 +881,7 @@ int ATREIDES_configSocket(ConfigAtreides config) {
 
 /***********************************************
 *
-* @Nom:
+* @Nom: Main
 * @Finalitat:
 * @Parametres:
 * @Retorn:
@@ -889,19 +890,19 @@ int ATREIDES_configSocket(ConfigAtreides config) {
 int main(int argc, char ** argv) {
     int clientFD;
 
-    //Check de argumentos de entrada
+    //Check d'argumentos d'entrada
     if (argc != 2) {
         printF("Error, falta el nom de fitxer de configuracio.\n");
         return -1;
     }
 
-    //Assignación del signal de CtrlC a nuestra función
+    //Assignació del signal de CtrlC a la nostra función
     signal(SIGINT, (void * ) RsiControlC);
 
-    //Lectura del fichero de configuración y cierre de su file descriptor.
+    //Lectura del fitxer de configuració y tancament del seu file descriptor.
     configuration = ATREIDES_fillConfiguration(argv[1]);
 
-    //Carga de usuarios en el struct
+    //Càrrega d'usuaris a l'struct
     users = ATREIDES_fillUsers();
 
     //Config del socket
