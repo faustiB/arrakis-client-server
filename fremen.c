@@ -188,8 +188,15 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
         return 1;
     } else if (strcasecmp(command, "search") == 0) {
         if (words == 2) {
-            //printF("Comanda OK.\n");
-            return 0;
+            unsigned int checkOnlyNumber;
+            
+            checkOnlyNumber = FREMEN_checkInputOnlyNumber(command_array[1]);
+            if (checkOnlyNumber == strlen(command_array[1])) {
+                return 0;
+            } else {
+                printF("Comanda KO. Codi Postal incorrecte, només números.\n");
+                return 1;
+            }
         } else if (words < 2) {
             printF("Comanda KO. Falta paràmetres\n");
         } else {
@@ -686,7 +693,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
                     frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
                     FREMEN_sendFrame(socket_fd, frame);
-                    printF("Conectado al servidor\n");
+
                     Frame frame_received;
                     frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
@@ -750,9 +757,9 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                     frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
                     if (frame_received.type == 'I') {
-                        printF("Foto enviada amb èxit a Atreides.. \n");
+                        printF("Foto enviada amb èxit a Atreides. \n");
                     } else {
-                        printF("Error a l'enviar la imatge a Atreides.. \n");
+                        printF("Error a l'enviar la imatge a Atreides. \n");
                     }
                 }
 
@@ -776,12 +783,12 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                     printF("No hi ha foto registrada\n");
                 } else {
 
-                    Frame frame_received;
-                    frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
-                    Photo p = FREMEN_receivePhotoInfo(frame_received.data);
+                    /*Frame frame_received;
+                    frame_received = FRAME_CONFIG_receiveFrame(socket_fd);*/
+
+                    Photo p = FREMEN_receivePhotoInfo(frame_received_data.data);
 
                     FREMEN_receivePhoto(p);
-
                 }
                 free(frame);
             } else {

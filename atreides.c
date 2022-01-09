@@ -85,6 +85,7 @@ void RsiControlC(void) {
 void ATREIDES_sendFrame(int fd, char * frame) {
     write(fd, frame, 256);
     printF("Enviada resposta\n");
+    printF("Esperant connexions...\n");
 }
 
 /* ********************************************************************
@@ -177,14 +178,16 @@ User * ATREIDES_fillUsers() {
 
             write(fd, "1\n", 2);
             write(fd, "1-Admin-00000\n", strlen("1-Admin-00000\n"));
+            close(fd);
 
+            fd = open("Atreides/users_memory.txt", O_RDONLY);
         }
-
     }
 
     buffer = IOSCREEN_readUntilIntro(fd, caracter, i);
     num_users = atoi(buffer);
     users_read = (User * ) malloc(sizeof(User) * num_users);
+
     free(buffer);
 
     i = 0;
@@ -470,6 +473,7 @@ Photo ATREIDES_generatePhotoInfo (Photo p, char data[240], int fd) {
     for (j = i; j < 256; j++) {
         frame[j] = '\0';
     }
+
 
     ATREIDES_sendFrame(fd, frame);
 
