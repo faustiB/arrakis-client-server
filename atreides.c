@@ -68,7 +68,7 @@ void RsiControlC(void) {
     free(users);
 
     close(socket_fd);
-    
+
     pthread_mutex_destroy(&lock);
 
     //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
@@ -825,6 +825,14 @@ int main(int argc, char ** argv) {
         close(socket_fd);
         raise(SIGINT);
     }
+
+    if (pthread_mutex_init(&lock, NULL) != 0)
+   {
+       printF("\nERROR: Init del mutex\n");
+       close(socket_fd);
+       raise(SIGINT);
+   }
+
 
     while (1) {
         printF("Esperant connexions...\n");
