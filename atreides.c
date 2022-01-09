@@ -535,7 +535,7 @@ void ATREIDES_sendPhoto(Photo p, int user_fd) {
  * @Def : Buscar Ususarios por  codigo postal
  *
  ********************************************************************* */
-char * ATREIDES_searchUsers(User u) {
+char * ATREIDES_searchUsers(User u, int fd) {
 
     int num_users_pc = 0, i;
     char * res = NULL, * cadena, cadena_print[200];
@@ -550,15 +550,27 @@ char * ATREIDES_searchUsers(User u) {
 
     memset(cadena_print, 0, sizeof(cadena_print));
     sprintf(cadena_print, "Feta la cerca\nHi ha %d persones humanes a %s\n", num_users_pc, u.postal_code);
-    write(STDOUT_FILENO, cadena_print, strlen(cadena_print));
+    write(STDOUT_FILENO, cadena_print, strlen(cadena_print)); 
 
     for (i = 0; i < num_users; i++) {
         if (strcmp(u.postal_code, users[i].postal_code) == 0) {
 
-            //Imprimim les persones trobades.
+            //Imprimim les persones trobades per pantalla.
             memset(cadena_print, 0, sizeof(cadena_print));
             sprintf(cadena_print, "%d %s\n", users[i].id, users[i].username);
             write(STDOUT_FILENO, cadena_print, strlen(cadena_print));
+
+            if (strlen(res) + strlen(users[i].username) + 5 > 240) {
+                char * frame_send;
+
+                frame_send = FRAME_CONFIG_generateFrame(2);
+                frame_send = ATREIDES_generateFrameSearch(frame_send, 'L', res);
+
+                ATREIDES_sendFrame(fd, frame_send);
+                free(frame_send);
+
+                memset(res, 0, sizeof(char) * strlen(res));
+            }
 
             asprintf( & cadena, "%s*%s*%d", res, users[i].username, users[i].id);
             free(res);
@@ -641,15 +653,14 @@ void * ATREIDES_threadClient(void * fdClient) {
             sprintf(cadena, "\nRebut Search %s de %s %d\n", u.postal_code, u.username, u.id);
             write(STDOUT_FILENO, cadena, strlen(cadena));
 
-            search_data = ATREIDES_searchUsers(u);
+            search_data = ATREIDES_searchUsers(u, fd);
 
             frame_send = FRAME_CONFIG_generateFrame(2);
-            frame_send = ATREIDES_generateFrameSearch(frame_send, 'S', search_data);
-
-            free(search_data);
+            frame_send = ATREIDES_generateFrameSearch(frame_send, 'L', search_data);
 
             ATREIDES_sendFrame(fd, frame_send);
             free(frame_send);
+            free(search_data);
 
             free(u.username);
             free(u.postal_code);

@@ -548,6 +548,23 @@ void FREMEN_receivePhoto(Photo p) {
 
 /* ********************************************************************
  *
+ * @Nombre : FREMEN_countAsterisk
+ * @Def : Función per comptar asteriscs a una cadena
+ *
+ ********************************************************************* */
+
+int FREMEN_countAsterisk(int num_asterics, char data[240]) {
+    //Comptem quants asterics hi han, per veure si hem de rebre més trames de search
+    for (int l = 0; data[l] != '\0'; l++) {
+        if (data[l] == '*') num_asterics++;
+    }
+
+    return num_asterics;
+}
+
+
+/* ********************************************************************
+ *
  * @Nombre : FREMEN_showSearchReceived
  * @Def : Función para tratar el comando que se introduce
  *
@@ -555,20 +572,35 @@ void FREMEN_receivePhoto(Photo p) {
 
 void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
-    int i, k, num_searched_users = 0;
-    char * num_searched_users_str = NULL, * name = NULL, * id_user = NULL, cadena[100];
+    int i, k, num_searched_users = 0, num_asterics = 0;
+    char * num_searched_users_str = NULL, * name = NULL, * id_user = NULL, cadena[100], * search_data;
+    Frame frame_received;
 
     i = 0;
 
-    if (strlen(data) > 1) {
+    asprintf(& search_data, "%s", data);
+
+    if (strlen(search_data) > 1) {
         num_searched_users_str = (char * ) malloc(1 * sizeof(char));
-        while (data[i] != '*') {
-            num_searched_users_str[i] = data[i];
+        while (search_data[i] != '*') {
+            num_searched_users_str[i] = search_data[i];
             num_searched_users_str = (char * ) realloc(num_searched_users_str, i + 2);
             i++;
         }
         num_searched_users_str[i] = '\0';
         num_searched_users = atoi(num_searched_users_str);
+
+        num_asterics = FREMEN_countAsterisk(num_asterics, search_data);
+
+        while (num_asterics/2 != num_searched_users) {
+            printf("\nNum users %d num ast %d\n", num_searched_users, num_asterics);
+            frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
+
+            asprintf(& search_data, "%s%s", search_data, frame_received.data);
+            num_asterics = FREMEN_countAsterisk(num_asterics, search_data);
+
+            if (num_asterics > num_searched_users*2) break;
+        }
 
         i++;
 
@@ -579,8 +611,8 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
             k = 0;
             name = (char * ) malloc(1 * sizeof(char));
 
-            while (data[i] != '*') {
-                name[k] = data[i];
+            while (search_data[i] != '*') {
+                name[k] = search_data[i];
                 name = (char * ) realloc(name, k + 2);
                 i++;
                 k++;
@@ -592,8 +624,8 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
             id_user = (char * ) malloc(1 * sizeof(char));
             k = 0;
 
-            while (data[i] != '*' && data[i] != '\0') {
-                id_user[k] = data[i];
+            while (search_data[i] != '*' && search_data[i] != '\0') {
+                id_user[k] = search_data[i];
                 id_user = (char * ) realloc(id_user, k + 2);
                 i++;
                 k++;
@@ -613,6 +645,7 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
         sprintf(cadena, "\nHi ha zero persones humanes a %s\n", postal_code);
         write(STDOUT_FILENO, cadena, strlen(cadena));
     }
+    free(search_data);
 }
 
 /* ********************************************************************
