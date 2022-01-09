@@ -7,6 +7,7 @@ void RsiControlC(void);
 ConfigAtreides configuration;
 int num_users, socket_fd;
 User * users;
+pthread_mutex_t lock;
 
 /* ********************************************************************
  *
@@ -67,6 +68,8 @@ void RsiControlC(void) {
     free(users);
 
     close(socket_fd);
+    
+    pthread_mutex_destroy(&lock);
 
     //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
     signal(SIGINT, SIG_DFL);
@@ -608,8 +611,11 @@ void * ATREIDES_threadClient(void * fdClient) {
             }
 
             if (u.id == 0) {
-                //Mutex para sumar uno a la vez
+
+                pthread_mutex_lock(&lock);
                 num_users++;
+                pthread_mutex_unlock(&lock);
+
                 u.id = num_users;
                 ATREIDES_addUser(u);
             }
@@ -678,7 +684,7 @@ void * ATREIDES_threadClient(void * fdClient) {
 
                 p = ATREIDES_generatePhotoInfo(p, frame.data, fd);
                 ATREIDES_sendPhoto(p, fd);
-                
+
                 close(photo_fd);
             } else {
                 printF("No hi ha foto registrada.\n");
