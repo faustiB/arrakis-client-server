@@ -687,8 +687,11 @@ void * ATREIDES_threadClient(void * fdClient) {
 
                 close(photo_fd);
             } else {
+                frame_send = FRAME_CONFIG_generateCustomFrame(2,'F',2);
                 printF("No hi ha foto registrada.\n");
-                //Enviar trama error.
+                ATREIDES_sendFrame(fd, frame_send);
+
+                free(frame_send);
             }
             break;
 

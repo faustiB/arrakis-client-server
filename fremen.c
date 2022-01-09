@@ -769,16 +769,25 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 FREMEN_generateFramePhoto(frame, 'P', command_array[1]);
                 FREMEN_sendFrame(socket_fd, frame);
 
-                Frame frame_received;
-                frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
-                Photo p = FREMEN_receivePhotoInfo(frame_received.data);
+                Frame frame_received_data;
+                frame_received_data = FRAME_CONFIG_receiveFrame(socket_fd);
 
-                FREMEN_receivePhoto(p);
+                if (strcmp(frame_received_data.data,"FILE NOT FOUND") == 0) {
+                    printF("No hi ha foto registrada\n");
+                } else {
 
+                    Frame frame_received;
+                    frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
+                    Photo p = FREMEN_receivePhotoInfo(frame_received.data);
+
+                    FREMEN_receivePhoto(p);
+
+                }
                 free(frame);
             } else {
                 printF("No es pot enviar la imatge perque no esteu loginats al servidor... \n");
             }
+
         }
 
         FREMEN_freeMemory(command, command_array);
