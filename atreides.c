@@ -69,7 +69,7 @@ void RsiControlC(void) {
 
     close(socket_fd);
 
-    pthread_mutex_destroy(&lock);
+    pthread_mutex_destroy( & lock);
 
     //Terminamos el programa enviándonos a nosotros mismos el signal de SIGINT
     signal(SIGINT, SIG_DFL);
@@ -85,7 +85,6 @@ void RsiControlC(void) {
 void ATREIDES_sendFrame(int fd, char * frame) {
     write(fd, frame, 256);
     printF("Enviada resposta\n");
-    printF("Esperant connexions...\n");
 }
 
 /* ********************************************************************
@@ -166,8 +165,6 @@ User * ATREIDES_fillUsers() {
     fd = open("Atreides/users_memory.txt", O_RDONLY);
 
     if (fd < 0) {
-        //printF("Fitxer de usuaris erroni\n");
-
         fd = open("Atreides/users_memory.txt", O_CREAT | O_RDWR, 0666);
         if (fd < 0) {
 
@@ -441,7 +438,7 @@ int ATREIDES_checkPhoto(char data[240]) {
     return photo_fd;
 }
 
-Photo ATREIDES_generatePhotoInfo (Photo p, char data[240], int fd) {
+Photo ATREIDES_generatePhotoInfo(Photo p, char data[240], int fd) {
     struct stat stats;
     char * filename = NULL, * out_file = NULL, * md5 = NULL, * data_to_send = NULL, * frame = NULL;
     int i, j;
@@ -474,7 +471,6 @@ Photo ATREIDES_generatePhotoInfo (Photo p, char data[240], int fd) {
         frame[j] = '\0';
     }
 
-
     ATREIDES_sendFrame(fd, frame);
 
     free(data_to_send);
@@ -490,7 +486,7 @@ Photo ATREIDES_generatePhotoInfo (Photo p, char data[240], int fd) {
  * @Def : ceación de la trama send
  *
  ********************************************************************* */
-void ATREIDES_generateFrameSend (char * frame, char type, char data[240]) {
+void ATREIDES_generateFrameSend(char * frame, char type, char data[240]) {
     int i = 0;
 
     frame[15] = type;
@@ -616,9 +612,9 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             if (u.id == 0) {
 
-                pthread_mutex_lock(&lock);
+                pthread_mutex_lock( & lock);
                 num_users++;
-                pthread_mutex_unlock(&lock);
+                pthread_mutex_unlock( & lock);
 
                 u.id = num_users;
                 ATREIDES_addUser(u);
@@ -691,7 +687,7 @@ void * ATREIDES_threadClient(void * fdClient) {
 
                 close(photo_fd);
             } else {
-                frame_send = FRAME_CONFIG_generateCustomFrame(2,'F',2);
+                frame_send = FRAME_CONFIG_generateCustomFrame(2, 'F', 2);
                 printF("No hi ha foto registrada.\n");
                 ATREIDES_sendFrame(fd, frame_send);
 
@@ -833,13 +829,11 @@ int main(int argc, char ** argv) {
         raise(SIGINT);
     }
 
-    if (pthread_mutex_init(&lock, NULL) != 0)
-   {
-       printF("\nERROR: Init del mutex\n");
-       close(socket_fd);
-       raise(SIGINT);
-   }
-
+    if (pthread_mutex_init( & lock, NULL) != 0) {
+        printF("\nERROR: Init del mutex\n");
+        close(socket_fd);
+        raise(SIGINT);
+    }
 
     while (1) {
         printF("Esperant connexions...\n");

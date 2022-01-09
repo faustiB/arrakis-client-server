@@ -48,7 +48,7 @@ char * FRAME_CONFIG_generateFrame(int origin) {
 
     if (origin == 1) {
         sprintf(frame, "FREMEN");
-    } else if (origin == 2){
+    } else if (origin == 2) {
         sprintf(frame, "ATREIDES");
     }
 
@@ -77,7 +77,7 @@ char * FRAME_CONFIG_generateCustomFrame(int origin, char type, int isOk) {
 
     if (origin == 1) {
         sprintf(frame, "FREMEN");
-    } else if (origin == 2){
+    } else if (origin == 2) {
         sprintf(frame, "ATREIDES");
     }
 
@@ -89,7 +89,7 @@ char * FRAME_CONFIG_generateCustomFrame(int origin, char type, int isOk) {
 
     if (isOk == 0) {
         sprintf(aux, "IMATGE OK");
-    } else if ( isOk == 1 ) {
+    } else if (isOk == 1) {
         sprintf(aux, "IMATGE KO");
     } else {
         sprintf(aux, "FILE NOT FOUND");
@@ -135,7 +135,7 @@ char * FRAME_CONFIG_getMD5(char * file) {
         wait(NULL);
         close(link[1]);
 
-        char * md5_out = (char * ) malloc(256* sizeof(char));
+        char * md5_out = (char * ) malloc(256 * sizeof(char));
         read(link[0], md5_out, 256);
         strtok(md5_out, " ");
 

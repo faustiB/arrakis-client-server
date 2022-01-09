@@ -20,6 +20,7 @@
 
 #include "frame_config.h"
 
+//Define
 #define printF(x) write(1, x, strlen(x))
 
 typedef struct {

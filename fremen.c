@@ -111,8 +111,6 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
         c.port = atoi(cadena);
         free(cadena);
 
-        //c.directory = IOSCREEN_readUntilIntro(fd, caracter, i);
-
         temp = IOSCREEN_readUntilIntro(fd, caracter, i);
         size = strlen(temp);
 
@@ -189,7 +187,7 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
     } else if (strcasecmp(command, "search") == 0) {
         if (words == 2) {
             unsigned int checkOnlyNumber;
-            
+
             checkOnlyNumber = FREMEN_checkInputOnlyNumber(command_array[1]);
             if (checkOnlyNumber == strlen(command_array[1])) {
                 return 0;
@@ -205,7 +203,6 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
         return 1;
     } else if (strcasecmp(command, "send") == 0) {
         if (words == 2) {
-            //printF("Comanda OK.\n");
             return 0;
         } else if (words < 2) {
             printF("Comanda KO. Falta paràmetres\n");
@@ -215,7 +212,6 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
         return 1;
     } else if (strcasecmp(command, "photo") == 0) {
         if (words == 2) {
-            //printF("Comanda OK.\n");
             return 0;
         } else if (words < 2) {
             printF("Comanda KO. Falta paràmetres\n");
@@ -351,7 +347,7 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
  ********************************************************************* */
 Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
     int i = 0, j = 0;
-    char * md5 = NULL, * data_to_send, *out_file = NULL;
+    char * md5 = NULL, * data_to_send, * out_file = NULL;
     struct stat stats;
     Photo p;
 
@@ -779,13 +775,9 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
                 Frame frame_received_data;
                 frame_received_data = FRAME_CONFIG_receiveFrame(socket_fd);
 
-                if (strcmp(frame_received_data.data,"FILE NOT FOUND") == 0) {
+                if (strcmp(frame_received_data.data, "FILE NOT FOUND") == 0) {
                     printF("No hi ha foto registrada\n");
                 } else {
-
-                    /*Frame frame_received;
-                    frame_received = FRAME_CONFIG_receiveFrame(socket_fd);*/
-
                     Photo p = FREMEN_receivePhotoInfo(frame_received_data.data);
 
                     FREMEN_receivePhoto(p);

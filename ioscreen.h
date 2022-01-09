@@ -11,6 +11,6 @@
 char * IOSCREEN_readUntilIntro(int fd, char caracter, int i);
 char * IOSCREEN_readDelimiter(int fd, char delimiter);
 char * IOSCREEN_read_until(int fd, char end);
-int IOSCREEN_isEmpty(const char *string);
+int IOSCREEN_isEmpty(const char * string);
 
 #endif //_IOSCREEN_H
