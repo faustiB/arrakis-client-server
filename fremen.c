@@ -1,5 +1,12 @@
-#include "fremen.h"
+/***********************************************
+*
+* @Proposit:
+* @Autor/s: Faozi Bouybaouene Gadrouz i Guillem Miró Sierra
+* @Data ultima modificacio: 09/01/2022
+*
+************************************************/
 
+#include "fremen.h"
 #include "ioscreen.h"
 
 
@@ -8,22 +15,26 @@ ConfigFremen configuration;
 int socket_fd, user_id, control_login;
 char * user_name;
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_sendFrame
- * @Def : Envío de la trama
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void FREMEN_sendFrame(int fd, char * frame) {
     write(fd, frame, 256);
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_generateFrameLogout
- * @Def : ceación y generación de la trama para logout.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 char * FREMEN_generateFrameLogout(char * frame, char type) {
     int i = 0, j = 0;
     char * buffer, id_str[3];
@@ -44,12 +55,14 @@ char * FREMEN_generateFrameLogout(char * frame, char type) {
     return frame;
 }
 
-/* ********************************************************************
- *
- * @Nombre : RsiControlC
- * @Def : Rutina asociada a la interrupción Control+C.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void RsiControlC(void) {
 
     //Printamos el mensaje de adiós al sistema
@@ -82,12 +95,14 @@ void RsiControlC(void) {
     raise(SIGINT);
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_fillConfiguration
- * @Def : Función para leer el fichero de configuración, y devolverlo en nuestro struct.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 ConfigFremen FREMEN_fillConfiguration(char * argv) {
     char caracter = ' ', * cadena = NULL, * temp = NULL;
     int i = 0, fd, size = 0;
@@ -129,18 +144,27 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
     return c;
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_freeMemory
- * @Def : Función para liberar la memoria.
- *
- ********************************************************************* */
-
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void FREMEN_freeMemory(char * command, char ** command_array) {
     free(command);
     free(command_array);
 }
 
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 int FREMEN_checkInputOnlyNumber(char * input) {
 
     unsigned int i = 0;
@@ -158,12 +182,14 @@ int FREMEN_checkInputOnlyNumber(char * input) {
 
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_checkNumberOfWords
- * @Def : Función para comprobar el número de parametros para el comando.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) {
 
     if (strcasecmp(command, "login") == 0) {
@@ -235,13 +261,14 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
     return 2;
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_configSocket
- * @Def : Preparación conexión atreides.
- *
- ********************************************************************* */
-
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 int FREMEN_configSocket(ConfigFremen config, char * command, char ** command_array) {
 
     struct sockaddr_in s_addr;
@@ -268,13 +295,14 @@ int FREMEN_configSocket(ConfigFremen config, char * command, char ** command_arr
     return socket_fd;
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_login
- * @Def : función de login
- *
- ********************************************************************* */
-
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void FREMEN_login(ConfigFremen configuration, char * command, char ** command_array) {
     socket_fd = FREMEN_configSocket(configuration, command, command_array);
     if (socket_fd < 1) {
@@ -282,12 +310,14 @@ void FREMEN_login(ConfigFremen configuration, char * command, char ** command_ar
     }
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_generateFrameLogin
- * @Def : ceación y generación de la tramapara login.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 char * FREMEN_generateFrameLogin(char * frame, char type, char * name, char * zipCode) {
     int i = 0, j = 0;
 
@@ -309,12 +339,14 @@ char * FREMEN_generateFrameLogin(char * frame, char type, char * name, char * zi
     return frame;
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_generateFrameSearch
- * @Def : ceación y generación de la tramapara logout.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
     int i = 0, j = 0;
 
@@ -339,12 +371,14 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
     return frame;
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_sendInfoPhoto
- * @Def : ceación y generación de las tramas de send.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
     int i = 0, j = 0;
     char * md5 = NULL, * data_to_send, * out_file = NULL;
@@ -429,12 +463,14 @@ Photo FREMEN_receivePhotoInfo(char data[240]) {
     return p;
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_generateFrameSend
- * @Def : ceación de la trama send
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void FREMEN_generateFrameSend(char * frame, char type, char data[240]) {
     int i = 0;
 
@@ -445,12 +481,14 @@ void FREMEN_generateFrameSend(char * frame, char type, char data[240]) {
     }
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_sendPhoto
- * @Def : ceación y generación de las tramas de send.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void FREMEN_sendPhoto(Photo p) {
     int contador_trames = 0, num_trames = 0;
     char * frame, buffer[240];
@@ -478,12 +516,14 @@ void FREMEN_sendPhoto(Photo p) {
     close(p.photo_fd);
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_generateFramePhoto
- * @Def : ceación de la trama send
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void FREMEN_generateFramePhoto(char * frame, char type, char data[240]) {
     int i = 0, j = 0;
 
@@ -546,13 +586,14 @@ void FREMEN_receivePhoto(Photo p) {
     free(out_file);
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_countAsterisk
- * @Def : Función per comptar asteriscs a una cadena
- *
- ********************************************************************* */
-
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 int FREMEN_countAsterisk(int num_asterics, char data[240]) {
     //Comptem quants asterics hi han, per veure si hem de rebre més trames de search
     for (int l = 0; data[l] != '\0'; l++) {
@@ -563,13 +604,14 @@ int FREMEN_countAsterisk(int num_asterics, char data[240]) {
 }
 
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_showSearchReceived
- * @Def : Función para tratar el comando que se introduce
- *
- ********************************************************************* */
-
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
     int i, k, num_searched_users = 0, num_asterics = 0;
@@ -648,12 +690,14 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
     free(search_data);
 }
 
-/* ********************************************************************
- *
- * @Nombre : FREMEN_promptChoice
- * @Def : Función para tratar el comando que se introduce
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 int FREMEN_promptChoice(ConfigFremen configuration) {
     char * command = NULL, * frame = NULL, cadena[200];
     char * ( * command_array);
@@ -869,12 +913,14 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
     }
 }
 
-/* ********************************************************************
- *
- * @Nombre : Main
- * @Def : Función principal.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 int main(int argc, char ** argv) {
 
     int command = 0;

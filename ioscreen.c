@@ -1,16 +1,29 @@
+/***********************************************
+*
+* @Proposit:
+* @Autor/s: Faozi Bouybaouene Gadrouz i Guillem Miró Sierra
+* @Data ultima modificacio: 09/01/2022
+*
+************************************************/
+
 #include "ioscreen.h"
 
-/* ********************************************************************
- *
- * @Nombre : IOSCREEN_readUntilIntro
- * @Def : Función para leer hasta un intro.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom: IOSCREEN_readUntilIntro
+* @Finalitat: Funció que llegeix una cadena fins a un \n.
+* @Parametres: int fd: file descriptor d'escriptura,
+ * char caracter: caracter per escrirue , int i.
+* @Retorn: cadena llegida.
+*
+************************************************/
 char * IOSCREEN_readUntilIntro(int fd, char caracter, int i) {
     char * buffer = NULL;
 
     while (caracter != '\n' || i == 0) {
         read(fd, & caracter, sizeof(char));
+
+        //Aloquem memòria només si el buffer és NULL.
         if (buffer == NULL) {
             buffer = (char * ) malloc(1 * sizeof(char));
         } else {
@@ -18,6 +31,7 @@ char * IOSCREEN_readUntilIntro(int fd, char caracter, int i) {
         }
         buffer[i] = caracter;
 
+        //Si arribem a un enter o un \0 tallem l'execució.
         if (caracter == '\n' || caracter == '\0') {
             buffer[i] = '\0';
             return buffer;
@@ -28,12 +42,14 @@ char * IOSCREEN_readUntilIntro(int fd, char caracter, int i) {
     return buffer;
 }
 
-/* ********************************************************************
- *
- * @Nombre : IOSCREEN_readDelimiter
- * @Def : Función para leer una linea
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom: IOSCREEN_readDelimiter
+* @Finalitat: Funció que llegeix una cadena fins a cert delimitador.
+* @Parametres: int fd: file descriptor d'escriptura, char delimiter.
+* @Retorn: cadena llegida.
+*
+************************************************/
 char * IOSCREEN_readDelimiter(int fd, char delimiter) {
 
     char * msg = malloc(1);
@@ -52,12 +68,14 @@ char * IOSCREEN_readDelimiter(int fd, char delimiter) {
     return msg;
 }
 
-/* ********************************************************************
- *
- * @Nombre : IOSCREEN_read_until
- * @Def : Función para leer una linea
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom: IOSCREEN_read_until
+* @Finalitat: Funció que llegeix una cadena fins a cert delimitador.
+* @Parametres: int fd: file descriptor d'escriptura, char end: delimiter.
+* @Retorn:  cadena llegida.
+*
+************************************************/
 char * IOSCREEN_read_until(int fd, char end) {
     int i = 0, size;
     char c = '\0';
@@ -78,12 +96,14 @@ char * IOSCREEN_read_until(int fd, char end) {
     return string;
 }
 
-/* ********************************************************************
- *
- * @Nombre : IOSCREEN_isEmpty
- * @Def : Función revisar si un string es todo espacios vacios.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom: IOSCREEN_isEmpty
+* @Finalitat: Revisa que una cadena no estigui plena d'espais només.
+* @Parametres: const char * string: cadena d'entrada
+* @Retorn: 0 per no són espais, 1 són espais.
+*
+************************************************/
 int IOSCREEN_isEmpty(const char * string) {
     while ( * string != '\0') {
         if (!isspace((unsigned char) * string))

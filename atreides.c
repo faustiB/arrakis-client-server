@@ -1,5 +1,12 @@
-#include "atreides.h"
+/***********************************************
+*
+* @Proposit:
+* @Autor/s: Faozi Bouybaouene Gadrouz i Guillem Miró Sierra
+* @Data ultima modificacio: 09/01/2022
+*
+************************************************/
 
+#include "atreides.h"
 #include "ioscreen.h"
 
 void RsiControlC(void);
@@ -9,12 +16,14 @@ int num_users, socket_fd;
 User * users;
 pthread_mutex_t lock;
 
-/* ********************************************************************
- *
- * @Nombre : UpdateFile
- * @Def :
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void UpdateFile() {
     char cadena[200];
     int fd;
@@ -40,12 +49,14 @@ void UpdateFile() {
     }
 }
 
-/* ********************************************************************
- *
- * @Nombre : RsiControlC
- * @Def : Rutina asociada a la interrupción Control+C.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void RsiControlC(void) {
     //Printamos el mensaje de adiós al sistema
     printF("\n\nDesconnectat d’Atreides. Dew!\n\n");
@@ -76,33 +87,39 @@ void RsiControlC(void) {
     raise(SIGINT);
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_sendFrame
- * @Def : Envío de la trama
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void ATREIDES_sendFrame(int fd, char * frame) {
     write(fd, frame, 256);
     printF("Enviada resposta\n");
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_sendPhotoData
- * @Def : Envío de la trama de photo
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void ATREIDES_sendPhotoData(int fd, char * frame) {
     write(fd, frame, 256);
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_generateFrameLogin
- * @Def : ceación y generación de la trama de respuesta para login.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 char * ATREIDES_generateFrameLogin(char * frame, char type, int id) {
 
     int i = 0, j = 0;
@@ -127,12 +144,14 @@ char * ATREIDES_generateFrameLogin(char * frame, char type, int id) {
 
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_generateFrameSearch
- * @Def : ceación y generación de la trama de respuesta para search.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 char * ATREIDES_generateFrameSearch(char * frame, char type, char * str) {
 
     int i = 0, j = 0;
@@ -150,12 +169,14 @@ char * ATREIDES_generateFrameSearch(char * frame, char type, char * str) {
     return frame;
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_fillUsers
- * @Def : Función para leer el fichero de usuarios, y devolverlo en nuestro struct.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 User * ATREIDES_fillUsers() {
     char caracter = ' ', * buffer;
     int fd, i = 0;
@@ -208,12 +229,14 @@ User * ATREIDES_fillUsers() {
     return users_read;
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_addUser
- * @Def : ...
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void ATREIDES_addUser(User u) {
 
     users = (User * ) realloc(users, ((num_users) * sizeof(User)));
@@ -227,12 +250,14 @@ void ATREIDES_addUser(User u) {
     users[num_users - 1].thread = u.thread;
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_getUserByFD
- * @Def : ...
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 int ATREIDES_getUserByFD(int fd) {
     for (int i = 0; i < num_users; i++) {
         if (fd == users[i].file_descriptor) return i;
@@ -240,12 +265,14 @@ int ATREIDES_getUserByFD(int fd) {
     return -1;
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_receiveUser
- * @Def : Recepcion de usuario
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 User ATREIDES_receiveUser(char data[240]) {
     int i, j;
     User u;
@@ -278,12 +305,14 @@ User ATREIDES_receiveUser(char data[240]) {
     return u;
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_receiveSearch
- * @Def : Recepcion de trama search
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 User ATREIDES_receiveSearch(char data[240]) {
     int i, j, k;
     User u;
@@ -329,6 +358,14 @@ User ATREIDES_receiveSearch(char data[240]) {
     return u;
 }
 
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void ATREIDES_receivePhoto(Photo p, int fd, int id) {
     Frame frame;
     int out, contador_trames = 0;
@@ -380,6 +417,14 @@ void ATREIDES_receivePhoto(Photo p, int fd, int id) {
     free(out_file);
 }
 
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 Photo ATREIDES_receiveSendInfo(char data[240]) {
     int i, j, k;
     Photo p;
@@ -422,6 +467,14 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
     return p;
 }
 
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 int ATREIDES_checkPhoto(char data[240]) {
     char * out_file = NULL, * filename = NULL;
     int photo_fd;
@@ -438,6 +491,14 @@ int ATREIDES_checkPhoto(char data[240]) {
     return photo_fd;
 }
 
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 Photo ATREIDES_generatePhotoInfo(Photo p, char data[240], int fd) {
     struct stat stats;
     char * filename = NULL, * out_file = NULL, * md5 = NULL, * data_to_send = NULL, * frame = NULL;
@@ -480,12 +541,14 @@ Photo ATREIDES_generatePhotoInfo(Photo p, char data[240], int fd) {
     return p;
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_generateFrameSend
- * @Def : ceación de la trama send
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void ATREIDES_generateFrameSend(char * frame, char type, char data[240]) {
     int i = 0;
 
@@ -496,12 +559,14 @@ void ATREIDES_generateFrameSend(char * frame, char type, char data[240]) {
     }
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_sendPhoto
- * @Def : ceación y generación de las tramas de send.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void ATREIDES_sendPhoto(Photo p, int user_fd) {
     int contador_trames = 0, num_trames = 0;
     char * frame, buffer[240];
@@ -529,12 +594,14 @@ void ATREIDES_sendPhoto(Photo p, int user_fd) {
     close(p.photo_fd);
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_searchUsers
- * @Def : Buscar Ususarios por  codigo postal
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 char * ATREIDES_searchUsers(User u, int fd) {
 
     int num_users_pc = 0, i;
@@ -582,12 +649,14 @@ char * ATREIDES_searchUsers(User u, int fd) {
     return res;
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_threadClient
- * @Def : función de thread, por cada cliente.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 void * ATREIDES_threadClient(void * fdClient) {
 
     int fd = * ((int * ) fdClient);
@@ -731,12 +800,14 @@ void * ATREIDES_threadClient(void * fdClient) {
     return NULL;
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_fillConfiguration
- * @Def : Función para leer el fichero de configuración, y devolverlo en nuestro struct.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
     char caracter = ' ', * cadena = NULL, * temp = NULL;
     int i = 0, fd, size = 0;
@@ -773,14 +844,14 @@ ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
     return c;
 }
 
-/* ********************************************************************
- *
- * @Nombre : ATREIDES_configSocket
- * @Def : Extrae los datos del fichero config y prepara el socket
- * @Arg : Out: el fd de la nueva conexion
- *
- ********************************************************************* */
-
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 int ATREIDES_configSocket(ConfigAtreides config) {
 
     struct sockaddr_in s_addr;
@@ -807,12 +878,14 @@ int ATREIDES_configSocket(ConfigAtreides config) {
     return fdSocket;
 }
 
-/* ********************************************************************
- *
- * @Nombre : Main
- * @Def : Función principal.
- *
- ********************************************************************* */
+/***********************************************
+*
+* @Nom:
+* @Finalitat:
+* @Parametres:
+* @Retorn:
+*
+************************************************/
 int main(int argc, char ** argv) {
     int clientFD;
 
