@@ -20,8 +20,8 @@ char * user_name;
 /***********************************************
 *
 * @Nom: FREMEN_sendFrame
-* @Finalitat:
-* @Parametres:
+* @Finalitat: enviar trama al file descriptor passat per paràmtere
+* @Parametres: int fd (file descriptor on s'escriurà), char * frame (trama a escriure)
 * @Retorn:
 *
 ************************************************/
@@ -32,23 +32,28 @@ void FREMEN_sendFrame(int fd, char * frame) {
 /***********************************************
 *
 * @Nom: FREMEN_generateFrameLogout
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Generar el frame de logout
+* @Parametres:char* frame(trama amb l'origen ja establert), char type (tipus de trama)
+* @Retorn: char* frame  (trama de Logout completa)
 *
 ************************************************/
 char * FREMEN_generateFrameLogout(char * frame, char type) {
     int i = 0, j = 0;
     char * buffer, id_str[3];
+
+    //Fiquem el tipus a la trama a retornar
     frame[15] = type;
 
+    //Passem el ID de l'usuari i el seu nom a la cadena buffer
     snprintf(id_str, 3, "%d", user_id);
     asprintf( & buffer, "%s*%s", user_name, id_str);
 
+    //passem el buffer a la trama a retornar
     for (i = 16; buffer[i - 16] != '\0'; i++) {
         frame[i] = buffer[i - 16];
     }
 
+    //Omplim el restant amb el caràcter '\0'
     for (j = i; j < 256; j++) {
         frame[j] = '\0';
     }
@@ -60,7 +65,7 @@ char * FREMEN_generateFrameLogout(char * frame, char type) {
 /***********************************************
 *
 * @Nom: RsiControlC
-* @Finalitat:
+* @Finalitat: Controlar l'alliberament de memòria assignada, i tancament de file descriptors oberts, quan es faci ctrl+c
 * @Parametres:
 * @Retorn:
 *
@@ -70,9 +75,11 @@ void RsiControlC(void) {
     //Printem el missatge de final d'execució.
     printF("\n\nAturant Fremen... \n\n");
 
+    //alliberem dades de configuració
     free(configuration.ip);
     free(configuration.directory);
 
+    //si hi ha un socket obert, s'envia una trama per fer el logout d'atreides
     if (socket_fd > 0) {
         char * frame;
 
@@ -85,6 +92,7 @@ void RsiControlC(void) {
         printF("\nDesconnectat d’Atreides. Dew!\n\n");
     }
 
+    //reiniciem socket a 0.
     if (socket_fd == -1) {
         socket_fd = 0;
     }
@@ -92,7 +100,7 @@ void RsiControlC(void) {
     free(user_name);
     close(socket_fd);
 
-    //Acabem el programa enviant-nos a nosaltres mateixos el sigint.
+    //Acabem el programa enviant-nos a nosaltres mateixos el sigint per defecte.
     signal(SIGINT, SIG_DFL);
     raise(SIGINT);
 }
@@ -100,9 +108,9 @@ void RsiControlC(void) {
 /***********************************************
 *
 * @Nom: FREMEN_fillConfiguration
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Omplir la configuració passada pel fitxer al nostre struct.
+* @Parametres: char* argv(nom del fitxer de configuració)
+* @Retorn: ConfigFremen c (Struct de dades de configuració ple amb les dades del fixter)
 *
 ************************************************/
 ConfigFremen FREMEN_fillConfiguration(char * argv) {
@@ -118,19 +126,22 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
         raise(SIGINT);
 
     } else {
+        //Lectura del segons
         cadena = IOSCREEN_readUntilIntro(fd, caracter, i);
         c.seconds_to_clean = atoi(cadena);
         free(cadena);
 
+        //Lectura de la ip
         c.ip = IOSCREEN_readUntilIntro(fd, caracter, i);
 
+        //Lectura del port
         cadena = IOSCREEN_readUntilIntro(fd, caracter, i);
         c.port = atoi(cadena);
         free(cadena);
 
+        //Tractament per la lectura del directori
         temp = IOSCREEN_readUntilIntro(fd, caracter, i);
         size = strlen(temp);
-
         c.directory = (char * ) malloc(sizeof(char) * size);
         memset(c.directory, 0, size * sizeof(char));
 
@@ -142,14 +153,13 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
         free(temp);
     }
 
-    //Lectura del fitxer de config i tancament del file descriptor.
     return c;
 }
 
 /***********************************************
 *
 * @Nom: FREMEN_freeMemory
-* @Finalitat:
+* @Finalitat:Alliberament de la memòria
 * @Parametres:
 * @Retorn:
 *
@@ -162,9 +172,9 @@ void FREMEN_freeMemory(char * command, char ** command_array) {
 /***********************************************
 *
 * @Nom: FREMEN_checkInputOnlyNumber
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Fer un check que el que s'ha introduit només està composat per números
+* @Parametres: char* input (valor a fer el check)
+* @Retorn: número de vegades que s'ha trobat un número a la cadena.
 *
 ************************************************/
 int FREMEN_checkInputOnlyNumber(char * input) {
@@ -185,17 +195,19 @@ int FREMEN_checkInputOnlyNumber(char * input) {
 /***********************************************
 *
 * @Nom: FREMEN_checkNumberOfWords
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Comprovar el número de paràmtres que hi entren depent de la comanda.
+* @Parametres: Char * command (comanda sencera), int words (quantitat de paraules), char ** command_array(array amb la comanda introduida, i els paraàmetres)
+* @Retorn: int : 0 -> OK ; 1 -> KO ; 2 -> Comanda linux
 *
 ************************************************/
 int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) {
 
+    //Check Comanda LOGIN
     if (strcasecmp(command, "login") == 0) {
+        //Check numero de paraules correcte
         if (words == 3) {
             unsigned int checkOnlyNumber;
-
+            //Check que el codi postal està composat per números
             checkOnlyNumber = FREMEN_checkInputOnlyNumber(command_array[2]);
             if (checkOnlyNumber == strlen(command_array[2])) {
                 return 0;
@@ -204,16 +216,19 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
                 return 1;
             }
             return 0;
+        //Check número de paràmtres erroni
         } else if (words < 3) {
             printF("Comanda KO. Falta paràmetres\n");
         } else {
             printF("Comanda KO. Massa paràmetres\n");
         }
         return 1;
+    //Check Comanda SEARCH
     } else if (strcasecmp(command, "search") == 0) {
+        //Check numero de paraules correcte
         if (words == 2) {
             unsigned int checkOnlyNumber;
-
+            //Check que el codi postal està composat per números
             checkOnlyNumber = FREMEN_checkInputOnlyNumber(command_array[1]);
             if (checkOnlyNumber == strlen(command_array[1])) {
                 return 0;
@@ -221,33 +236,43 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
                 printF("Comanda KO. Codi Postal incorrecte, només números.\n");
                 return 1;
             }
+        //Check numero de paraules erroni
         } else if (words < 2) {
             printF("Comanda KO. Falta paràmetres\n");
         } else {
             printF("Comanda KO. Massa paràmetres\n");
         }
         return 1;
+    //Check comanda Send
     } else if (strcasecmp(command, "send") == 0) {
+        //check número de paraules correcte
         if (words == 2) {
             return 0;
+        //check número de paraules erroni
         } else if (words < 2) {
             printF("Comanda KO. Falta paràmetres\n");
         } else {
             printF("Comanda KO. Massa paràmetres\n");
         }
         return 1;
+    //Check comanda photo
     } else if (strcasecmp(command, "photo") == 0) {
+        //check número de paràmetres correcte
         if (words == 2) {
             return 0;
+        //check número de paràmtres erroni
         } else if (words < 2) {
             printF("Comanda KO. Falta paràmetres\n");
         } else {
             printF("Comanda KO. Massa paràmetres\n");
         }
         return 1;
+    //check comanda Logout
     } else if (strcasecmp(command, "logout") == 0) {
+        //Check número de paraules correcte
         if (words == 1) {
             return 0;
+        //check número de paraules erroni
         } else if (words < 1) {
             printF("Comanda KO. Falta paràmetres\n");
         } else {
@@ -264,9 +289,9 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
 /***********************************************
 *
 * @Nom: FREMEN_configSocket
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Fer la configuració completa del socket.
+* @Parametres: ConfigFremen config (configuració completa), char* comand (comanda), char ** command_array(comanda completa amb paràmetres)
+* @Retorn: int : file descriptor del socket configurat. 
 *
 ************************************************/
 int FREMEN_configSocket(ConfigFremen config, char * command, char ** command_array) {
@@ -274,18 +299,22 @@ int FREMEN_configSocket(ConfigFremen config, char * command, char ** command_arr
     struct sockaddr_in s_addr;
     int socket_fd;
 
+    //Creació del socket
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_fd < 0) {
         printF("ERROR: crear socket del cliente\n");
+        //En el cas que anés malament, s'ha d'alliberar la memòria d'aquestes variables.
         FREMEN_freeMemory(command, command_array);
         raise(SIGINT);
     }
 
+    //Configuració restant del socket.
     memset( & s_addr, 0, sizeof(s_addr));
     s_addr.sin_family = AF_INET;
     s_addr.sin_port = htons(config.port);
     s_addr.sin_addr.s_addr = inet_addr(config.ip);
 
+    //Connexió del socket amb el servidor.
     if (connect(socket_fd, (void * ) & s_addr, sizeof(s_addr)) < 0) {
         printF("ERROR: connect del cliente\n");
         close(socket_fd);
@@ -298,8 +327,8 @@ int FREMEN_configSocket(ConfigFremen config, char * command, char ** command_arr
 /***********************************************
 *
 * @Nom: FREMEN_login
-* @Finalitat:
-* @Parametres:
+* @Finalitat: Executar el login amb el servidor.
+* @Parametres: ConfigFremen configuration (configuració completa), char * command (comanda), char ** command_array(comanda completa)
 * @Retorn:
 *
 ************************************************/
