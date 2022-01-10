@@ -734,11 +734,12 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
         sprintf(cadena, "\nHi ha %s persones humanes a %s\n", num_searched_users_str, postal_code);
         write(STDOUT_FILENO, cadena, strlen(cadena));
 
-
+        //Lectura de tots els noms. buscats.
         for (int j = 0; j < num_searched_users; j++) {
             k = 0;
             name = (char * ) malloc(1 * sizeof(char));
 
+            //Lectura dels nom , es a dir fins a l'asterisc
             while (search_data[i] != '*') {
                 name[k] = search_data[i];
                 name = (char * ) realloc(name, k + 2);
@@ -749,9 +750,9 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
             name[k] = '\0';
             i++;
 
+            //lectura de l'ID. és a dir fins al següent asterisc.
             id_user = (char * ) malloc(1 * sizeof(char));
             k = 0;
-
             while (search_data[i] != '*' && search_data[i] != '\0') {
                 id_user[k] = search_data[i];
                 id_user = (char * ) realloc(id_user, k + 2);
@@ -762,6 +763,7 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
             i++;
 
+            //Mostrar per pantalla id i nom de l'usuari trobat.
             sprintf(cadena, "%s %s\n", id_user, name);
             write(STDOUT_FILENO, cadena, strlen(cadena));
 
@@ -779,9 +781,9 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 /***********************************************
 *
 * @Nom: FREMEN_promptChoice
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Executar la comanda entrada per pantalla
+* @Parametres:ConfigFremen configuration(configuracio completa)
+* @Retorn:int : 0 -> OK, 1 -> KO
 *
 ************************************************/
 int FREMEN_promptChoice(ConfigFremen configuration) {
@@ -809,7 +811,6 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
     //Tractament del comand per separar la comanda de sortida.
     command_array = (char ** ) malloc(sizeof(char * ));
     command_array[i] = strtok(command, " ");
-
     while (command_array[i] != NULL) {
         num_of_words++;
         command_array = realloc(command_array, (num_of_words + 1) * sizeof(char * ));
@@ -821,20 +822,29 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
     //Comanda custom ok
     if (isok == 0) {
+
+        //Comanda entrada es logout.
         if (strcasecmp(command_array[0], "logout") == 0) {
+            //Check Login fet abans.
             if (socket_fd > 0) {
 
+                //Es genera frame de logout.
                 frame = FRAME_CONFIG_generateFrame(1);
                 frame = FREMEN_generateFrameLogout(frame, 'Q');
+
+                //s'envia Frame.
                 FREMEN_sendFrame(socket_fd, frame);
 
+                //alliberament de memoria
                 free(frame);
 
+                //Tancament del file descriptor del socket.
                 close(socket_fd);
                 socket_fd = 0;
 
                 printF("\nDesconnectat d’Atreides. Dew!\n\n");
 
+                //alliberament de memoria
                 FREMEN_freeMemory(command, command_array);
                 raise(SIGINT);
 
@@ -843,23 +853,32 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             }
 
         } else if (strcasecmp(command_array[0], "login") == 0) {
+            //Check Login fet abans, només es pot fer 1 cop.
             if (socket_fd == 0) {
 
+                //generació frame login
                 frame = FRAME_CONFIG_generateFrame(1);
                 FREMEN_login(configuration, command, command_array);
 
+                //Check servidor atreides està corrent.
                 if (socket_fd > 0) {
 
+                    //Completar generació d'atreides
                     frame = FREMEN_generateFrameLogin(frame, 'C', command_array[1], command_array[2]);
                     FREMEN_sendFrame(socket_fd, frame);
 
+                    //Lectura de la resposta
                     Frame frame_received;
                     frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
+                    //Analitzar tipus rebut de la resposta.
                     if (frame_received.type == 'O') {
                         control_login = 1;
 
+                        //Lectura de l'id del frame rebut.
                         user_id = atoi(frame_received.data);
+
+                        //Asignació del nom.
                         user_name = (char * ) malloc(sizeof(char) * strlen(command_array[1]) + 1);
                         strcpy(user_name, command_array[1]);
 
@@ -868,6 +887,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
 
                         printF("Ara estàs connectat a Atreides.\n");
 
+                    //Check el login no ha anat bé. Aquest tipus de trama ho indica així.
                     } else if (frame_received.type == 'E') {
                         printF("Error a l'hora de fer el login. \n");
                     }
@@ -885,16 +905,21 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             }
 
         } else if (strcasecmp(command_array[0], "search") == 0) {
+            //Check Login fet abans.
             if (socket_fd > 0) {
                 frame = NULL;
 
+                //Generació trama del search.
                 frame = FRAME_CONFIG_generateFrame(1);
                 frame = FREMEN_generateFrameSearch(frame, 'S', command_array[1]);
+
                 FREMEN_sendFrame(socket_fd, frame);
 
+                //Recepció de la trama de resposta.
                 Frame frame_received;
                 frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
+                //Mostrar la resposta.
                 FREMEN_showSearchReceived(frame_received.data, command_array[1]);
 
                 free(frame);
@@ -903,18 +928,23 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             }
 
         } else if (strcasecmp(command_array[0], "send") == 0) {
+            //Check Login fet abans.
             if (socket_fd > 0) {
                 frame = NULL;
 
+                //generació trama de send.
                 frame = FRAME_CONFIG_generateFrame(1);
                 p = FREMEN_sendInfoPhoto(frame, 'F', command_array[1]);
 
+                //check foto és correcta.
                 if (p.photo_fd > 0) {
                     FREMEN_sendPhoto(p);
 
+                    //Recepció de la trama resposta
                     Frame frame_received;
                     frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
 
+                    //Anàlisi del tipus de la trama de resposta.
                     if (frame_received.type == 'I') {
                         printF("Foto enviada amb èxit a Atreides. \n");
                     } else {
@@ -928,21 +958,27 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
             }
 
         } else if (strcasecmp(command_array[0], "photo") == 0) {
+            //Check Login fet abans.
             if (socket_fd > 0) {
                 frame = NULL;
 
+                //Generació de la trama de photo
                 frame = FRAME_CONFIG_generateFrame(1);
                 FREMEN_generateFramePhoto(frame, 'P', command_array[1]);
+
                 FREMEN_sendFrame(socket_fd, frame);
 
+                //Recepció de la trama de resposta.
                 Frame frame_received_data;
                 frame_received_data = FRAME_CONFIG_receiveFrame(socket_fd);
 
+                //Check si la trama de resposta ens diu que no s'ha trobat la foto.
                 if (strcmp(frame_received_data.data, "FILE NOT FOUND") == 0) {
                     printF("No hi ha foto registrada\n");
                 } else {
+                    //rececpció de la informació de la foto, en el cas que sigui trobada.
                     Photo p = FREMEN_receivePhotoInfo(frame_received_data.data);
-
+                    //Recepció de la foto.
                     FREMEN_receivePhoto(p);
                 }
                 free(frame);
@@ -963,7 +999,7 @@ int FREMEN_promptChoice(ConfigFremen configuration) {
     } else {
         pid_t pid;
 
-        //Creació del fork
+        //Creació del fork per executar comanda linux.
         if ((pid = fork()) < 0) {
             FREMEN_freeMemory(command, command_array);
             printF("Error al crear el Fork\n");
