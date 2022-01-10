@@ -291,7 +291,7 @@ int FREMEN_checkNumberOfWords(char * command, int words, char ** command_array) 
 * @Nom: FREMEN_configSocket
 * @Finalitat: Fer la configuració completa del socket.
 * @Parametres: ConfigFremen config (configuració completa), char* comand (comanda), char ** command_array(comanda completa amb paràmetres)
-* @Retorn: int : file descriptor del socket configurat. 
+* @Retorn: int : file descriptor del socket configurat.
 *
 ************************************************/
 int FREMEN_configSocket(ConfigFremen config, char * command, char ** command_array) {
@@ -342,24 +342,27 @@ void FREMEN_login(ConfigFremen configuration, char * command, char ** command_ar
 /***********************************************
 *
 * @Nom: FREMEN_generateFrameLogin
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Generar una trama per poder fer login
+* @Parametres: char* frame(trama a enviar), char type (tipus de trama), char * name(nom de la trama), char *zipCode(codi Postal)
+* @Retorn: char * frame, trama a enviar.
 *
 ************************************************/
 char * FREMEN_generateFrameLogin(char * frame, char type, char * name, char * zipCode) {
     int i = 0, j = 0;
 
     char * buffer;
-
+    //assignem el tipus a la trama
     frame[15] = type;
 
+    //es concatena en format de trama tant el nom com el codi postal
     asprintf( & buffer, "%s*%s", name, zipCode);
 
+    //S'omple la trama amb el buffer anterior.
     for (i = 16; buffer[i - 16] != '\0'; i++) {
         frame[i] = buffer[i - 16];
     }
 
+    //S'omple el restant amb '\0'
     for (j = i; j < 256; j++) {
         frame[j] = '\0';
     }
@@ -371,9 +374,9 @@ char * FREMEN_generateFrameLogin(char * frame, char type, char * name, char * zi
 /***********************************************
 *
 * @Nom: FREMEN_generateFrameSearch
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Generar una trama per poder fer search
+* @Parametres: char * frame (trama a ser enviada), char type (tipus de trama), char * zipCode (codi postal)
+* @Retorn: char * frame (trama a ser enviada)
 *
 ************************************************/
 char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
@@ -381,31 +384,33 @@ char * FREMEN_generateFrameSearch(char * frame, char type, char * zipCode) {
 
     char * buffer, id_str[3];
 
+    //Asignem el tipus a la trama
     frame[15] = type;
 
+    //Es genera el buffer amb el nom i l'id de l'usuari per poder enviar la trama.
     snprintf(id_str, 3, "%d", user_id);
-
     asprintf( & buffer, "%s*%s*%s", user_name, id_str, zipCode);
 
+    //S'omple la trama amb el buffer
     for (i = 16; buffer[i - 16] != '\0'; i++) {
         frame[i] = buffer[i - 16];
     }
 
+    //S'omple el restatnt amb '\0'
     for (j = i; j < 256; j++) {
         frame[j] = '\0';
     }
 
     free(buffer);
-
     return frame;
 }
 
 /***********************************************
 *
 * @Nom: FREMEN_sendInfoPhoto
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Enviar la informació de la foto.
+* @Parametres: char * frame (trama a ser enviada), char type(tipus de la trama), char * file(nom del fitxer)
+* @Retorn: Photo p amb la informació de la foto.
 *
 ************************************************/
 Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
@@ -414,28 +419,36 @@ Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
     struct stat stats;
     Photo p;
 
+    //Generació del nom complet , amb el directori de la configuració
     strcpy(p.file_name, file);
     asprintf( & out_file, "%s/%s", configuration.directory, p.file_name);
 
+    //obertura del fitxer.
     p.photo_fd = open(out_file, O_RDONLY);
 
     if (p.photo_fd < 0) {
         printF("La imatge no existeix...\n");
     } else {
+        //obtenció del md5 del fitxer
         md5 = FRAME_CONFIG_getMD5(out_file);
 
+        //obtenció de la mida del fitxer
         if (stat(out_file, & stats) == 0) {
             p.file_size = stats.st_size;
         }
 
+        //generació del buffer amb el nom, mida i md5 del fitxer
         asprintf( & data_to_send, "%s*%d*%s", p.file_name, p.file_size, md5);
 
+        //S'assigna el tipus de trama.
         frame[15] = type;
 
+        //S'omple la trama amb el buffer.
         for (i = 16; data_to_send[i - 16] != '\0'; i++) {
             frame[i] = data_to_send[i - 16];
         }
 
+        //S'omple el restant de la trma amb '\0'
         for (j = i; j < 256; j++) {
             frame[j] = '\0';
         }
@@ -453,9 +466,9 @@ Photo FREMEN_sendInfoPhoto(char * frame, char type, char * file) {
 /***********************************************
 *
 * @Nom: FREMEN_receivePhotoInfo
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: rebre la informació de la foto.
+* @Parametres: char data[240] part data de la trama, on està la informació de la trama.
+* @Retorn: Photo p amb la informació.
 *
 ************************************************/
 Photo FREMEN_receivePhotoInfo(char data[240]) {
@@ -465,6 +478,7 @@ Photo FREMEN_receivePhotoInfo(char data[240]) {
 
     i = 0;
 
+    //lectura del nom del fitxer.
     while (data[i] != '*') {
         p.file_name[i] = data[i];
         i++;
@@ -472,9 +486,9 @@ Photo FREMEN_receivePhotoInfo(char data[240]) {
     p.file_name[i] = '\0';
     i++;
 
+    //lectura de la mida
     j = 0;
     number = (char * ) malloc(1 * sizeof(char));
-
     while (data[i] != '*') {
         number[j] = data[i];
         number = (char * ) realloc(number, j + 2);
@@ -483,11 +497,10 @@ Photo FREMEN_receivePhotoInfo(char data[240]) {
     }
     number[j] = '\0';
     i++;
-
     p.file_size = atoi(number);
 
+    //lectura del md5
     k = 0;
-
     while (data[i] != '\0') {
         p.file_md5[k] = data[i];
         i++;
@@ -495,24 +508,26 @@ Photo FREMEN_receivePhotoInfo(char data[240]) {
     }
     p.file_md5[k] = '\0';
 
-    free(number);
 
+    free(number);
     return p;
 }
 
 /***********************************************
 *
 * @Nom: FREMEN_generateFrameSend
-* @Finalitat:
-* @Parametres:
+* @Finalitat: Generar la trama per enviar la comanda Send.
+* @Parametres: char * frame (trama a ser enviada), char type (tipus de la trama), char data[240](dades a ser enviades)
 * @Retorn:
 *
 ************************************************/
 void FREMEN_generateFrameSend(char * frame, char type, char data[240]) {
     int i = 0;
 
+    //S'assigna el tipus
     frame[15] = type;
 
+    //S'assigna les dades a la trama.
     for (i = 16; i < 256; i++) {
         frame[i] = data[i - 16];
     }
@@ -521,8 +536,8 @@ void FREMEN_generateFrameSend(char * frame, char type, char data[240]) {
 /***********************************************
 *
 * @Nom: FREMEN_sendPhoto
-* @Finalitat:
-* @Parametres:
+* @Finalitat:Enviar la foto.
+* @Parametres: Photo p amb les dades.
 * @Retorn:
 *
 ************************************************/
@@ -530,18 +545,26 @@ void FREMEN_sendPhoto(Photo p) {
     int contador_trames = 0, num_trames = 0;
     char * frame, buffer[240];
 
+    //Calcul de trames, necessàries.
     num_trames = p.file_size / 240;
+
+    //Veriicar si és necessari més d'una trama
     if (p.file_size % 240 != 0) {
         num_trames++;
     }
 
+    //mentres el contador de trames, sigui inferior al num de trames, es van enviant.
     while (contador_trames < num_trames) {
+
+        //lecutra de la foto
         memset(buffer, 0, sizeof(buffer));
         read(p.photo_fd, buffer, 240);
 
+        //generació de la trama
         frame = FRAME_CONFIG_generateFrame(1);
         FREMEN_generateFrameSend(frame, 'D', buffer);
 
+        //Enviament de la trama.
         FREMEN_sendFrame(socket_fd, frame);
 
         contador_trames++;
@@ -550,26 +573,30 @@ void FREMEN_sendPhoto(Photo p) {
         usleep(300);
     }
 
+    //Tancament del file descriptor de la foto.
     close(p.photo_fd);
 }
 
 /***********************************************
 *
 * @Nom: FREMEN_generateFramePhoto
-* @Finalitat:
-* @Parametres:
+* @Finalitat: Generar trama per enviar la comanda Photo
+* @Parametres: char * frame (trama a ser enviada), char type (tipus de la trama), char data[240](dades a ser enviades)
 * @Retorn:
 *
 ************************************************/
 void FREMEN_generateFramePhoto(char * frame, char type, char data[240]) {
     int i = 0, j = 0;
 
+    //S'assinga el tipus de la trama
     frame[15] = type;
 
+    //S'omple la trama amb les dades.
     for (i = 16; data[i - 16] != '\0'; i++) {
         frame[i] = data[i - 16];
     }
 
+    //S'omple la resta de la trama amb un '\0'
     for (j = i; j < 256; j++) {
         frame[j] = '\0';
     }
@@ -578,8 +605,8 @@ void FREMEN_generateFramePhoto(char * frame, char type, char data[240]) {
 /***********************************************
 *
 * @Nom: FREMEN_receivePhoto
-* @Finalitat:
-* @Parametres:
+* @Finalitat: Rebre la foto.
+* @Parametres: Photo P (struct photo amb les dades. )
 * @Retorn:
 *
 ************************************************/
@@ -588,22 +615,29 @@ void FREMEN_receivePhoto(Photo p) {
     int out, contador_trames = 0;
     char * md5 = NULL, * out_file = NULL, cadena[200], * trama = NULL;
 
+    //Informar de com s'ha guardat.
     sprintf(cadena, "Guardada com %s\n", p.file_name);
     write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
 
+    //Generació del nom correcte per crear la foto al directori correcte.
     asprintf( & out_file, "%s/%s", configuration.directory, p.file_name);
-
     out = open(out_file, O_CREAT | O_WRONLY | O_TRUNC, 0666);
 
+    //Càlcul del num de trames
     int num_trames = p.file_size / 240;
+
+    //Veriicar si és necessari més d'una trama
     if (p.file_size % 240 != 0) {
         num_trames++;
     }
 
+    //Mentres el contador de trames , sigui més petit que el número de trames, es segueix rebent la foto.
     while (contador_trames < num_trames) {
 
+        //Rebem el frame
         frame = FRAME_CONFIG_receiveFrame(socket_fd);
 
+        //Si estem a la ultima trama, només s'escriu la quantitat de bytes necessaris.
         if (contador_trames == num_trames - 1 && p.file_size % 240 != 0) {
             write(out, frame.data, p.file_size % 240);
         } else {
@@ -612,10 +646,13 @@ void FREMEN_receivePhoto(Photo p) {
 
         contador_trames++;
     }
+    //Tancament del fitxer que hem obert.
     close(out);
 
+    //S'obté el md5 del fitxer.
     md5 = FRAME_CONFIG_getMD5(out_file);
 
+    //Check si les fotos son iguals, utilitzant amb el md5
     if (md5 != NULL) {
         if (strcmp(p.file_md5, md5) != 0) {
             printF("Error: Les fotos no són iguals! \n");
@@ -634,9 +671,9 @@ void FREMEN_receivePhoto(Photo p) {
 /***********************************************
 *
 * @Nom: FREMEN_countAsterisk
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Comptar asterics
+* @Parametres: int num_asterics (numero d'asteriscs), char data[240](data rebuda del frame)
+* @Retorn: número d'asteriscs.
 *
 ************************************************/
 int FREMEN_countAsterisk(int num_asterics, char data[240]) {
@@ -652,8 +689,8 @@ int FREMEN_countAsterisk(int num_asterics, char data[240]) {
 /***********************************************
 *
 * @Nom: FREMEN_showSearchReceived
-* @Finalitat:
-* @Parametres:
+* @Finalitat: Mostrar el search que s'ha rebut.
+* @Parametres: char data[240](data que s'ha rebut), char *postal_code(codi postal rebut)
 * @Retorn:
 *
 ************************************************/
@@ -664,10 +701,10 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
     Frame frame_received;
 
     i = 0;
-
+    //lectura de la Data.
     asprintf(& search_data, "%s", data);
-
     if (strlen(search_data) > 1) {
+        //Lectura del numero total d'usuaris.
         num_searched_users_str = (char * ) malloc(1 * sizeof(char));
         while (search_data[i] != '*') {
             num_searched_users_str[i] = search_data[i];
@@ -677,15 +714,18 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
         num_searched_users_str[i] = '\0';
         num_searched_users = atoi(num_searched_users_str);
 
+        //Comptem asteriscs
         num_asterics = FREMEN_countAsterisk(num_asterics, search_data);
 
+        //Mentres la meitat dels asteriscs (sempre hi ha el doble que usuaris), sigui diferent al número total d'usuaris. Printem usuaris.
         while (num_asterics/2 != num_searched_users) {
-            printf("\nNum users %d num ast %d\n", num_searched_users, num_asterics);
+            //lectura del frame
             frame_received = FRAME_CONFIG_receiveFrame(socket_fd);
-
             asprintf(& search_data, "%s%s", search_data, frame_received.data);
+            //tornem a contar asteriscs
             num_asterics = FREMEN_countAsterisk(num_asterics, search_data);
 
+            //En el cas que el número d'asteriscs sigui més gran que el doble de num usuaris, es surt del loop.
             if (num_asterics > num_searched_users*2) break;
         }
 
@@ -693,6 +733,7 @@ void FREMEN_showSearchReceived(char data[240], char * postal_code) {
 
         sprintf(cadena, "\nHi ha %s persones humanes a %s\n", num_searched_users_str, postal_code);
         write(STDOUT_FILENO, cadena, strlen(cadena));
+
 
         for (int j = 0; j < num_searched_users; j++) {
             k = 0;
