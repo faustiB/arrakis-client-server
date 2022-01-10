@@ -160,7 +160,7 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
 *
 * @Nom: FREMEN_freeMemory
 * @Finalitat:Alliberament de la memòria
-* @Parametres:
+* @Parametres: char * command: string amb la commanda, char ** command_array: array amb la comanda separada
 * @Retorn:
 *
 ************************************************/
