@@ -473,6 +473,7 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
 
     i = 0;
 
+    //Processem el nom del fitxer.
     while (data[i] != '*') {
         p.file_name[i] = data[i];
         i++;
@@ -483,6 +484,7 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
     j = 0;
     number = (char * ) malloc(1 * sizeof(char));
 
+    //Processem la mida i la passem a int.
     while (data[i] != '*') {
         number[j] = data[i];
         number = (char * ) realloc(number, j + 2);
@@ -496,6 +498,7 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
 
     k = 0;
 
+    //Processem el codi md5
     while (data[i] != '\0') {
         p.file_md5[k] = data[i];
         i++;
@@ -511,9 +514,9 @@ Photo ATREIDES_receiveSendInfo(char data[240]) {
 /***********************************************
 *
 * @Nom: ATREIDES_checkPhoto
-* @Finalitat:
+* @Finalitat: Intentar obrir una photo per veure si existeix
 * @Parametres: char data[240]: dades rebudes a la trama
-* @Retorn:
+* @Retorn: FD de la imatge
 *
 ************************************************/
 int ATREIDES_checkPhoto(char data[240]) {
@@ -522,10 +525,12 @@ int ATREIDES_checkPhoto(char data[240]) {
 
     asprintf( & filename, "%s.jpg", data);
 
+    //Concatenem el nom del directori amb la imatge
     asprintf( & out_file, "%s/%s", configuration.directory, filename);
 
     free(filename);
 
+    //Obrim la imatge amb mode lectura.
     photo_fd = open(out_file, O_RDONLY);
     free(out_file);
 
@@ -535,9 +540,9 @@ int ATREIDES_checkPhoto(char data[240]) {
 /***********************************************
 *
 * @Nom: ATREIDES_generatePhotoInfo
-* @Finalitat:
-* @Parametres: char data[240]: dades rebudes a la trama
-* @Retorn:
+* @Finalitat: Generar la informació d'una imatge
+* @Parametres: Photo p: imatge inicialitzada, char data[240]: dades rebudes a la trama, int fd: file descriptor de l'usuari
+* @Retorn: objecte photo amb les dades copiades.
 *
 ************************************************/
 Photo ATREIDES_generatePhotoInfo(Photo p, char data[240], int fd) {
@@ -545,20 +550,24 @@ Photo ATREIDES_generatePhotoInfo(Photo p, char data[240], int fd) {
     char * filename = NULL, * out_file = NULL, * md5 = NULL, * data_to_send = NULL, * frame = NULL;
     int i, j;
 
+    //Creem el nom de la imatge i l'afegim al struct.
     asprintf( & filename, "%s.jpg", data);
     strcpy(p.file_name, filename);
     free(filename);
 
     asprintf( & out_file, "%s/%s", configuration.directory, p.file_name);
 
+    //Generem el md5 i l'afegim al struct.
     md5 = FRAME_CONFIG_getMD5(out_file);
     strcpy(p.file_md5, md5);
     free(md5);
 
+    //Mirem el tamany del fitxer i el desem a l'struct.
     if (stat(out_file, & stats) == 0) {
         p.file_size = stats.st_size;
     }
 
+    //Generem les dades pel frame a enviar
     asprintf( & data_to_send, "%s*%d*%s", p.file_name, p.file_size, p.file_md5);
 
     frame = FRAME_CONFIG_generateFrame(2);
@@ -585,8 +594,8 @@ Photo ATREIDES_generatePhotoInfo(Photo p, char data[240], int fd) {
 /***********************************************
 *
 * @Nom: ATREIDES_generateFrameSend
-* @Finalitat:
-* @Parametres: char data[240]: dades rebudes a la trama
+* @Finalitat: Generar un frame del tipus Send
+* @Parametres: char * frame: frame inicialitzat, char type: tipus de trama a enviar, char data[240]: dades rebudes a la trama
 * @Retorn:
 *
 ************************************************/
@@ -603,8 +612,8 @@ void ATREIDES_generateFrameSend(char * frame, char type, char data[240]) {
 /***********************************************
 *
 * @Nom: ATREIDES_sendPhoto
-* @Finalitat:
-* @Parametres:
+* @Finalitat: Enviar una fotografia a Fremen.
+* @Parametres: Photo p: objecte amb les dades de la imatge, int user_fd: file descriptor de l'usuari
 * @Retorn:
 *
 ************************************************/
@@ -612,15 +621,20 @@ void ATREIDES_sendPhoto(Photo p, int user_fd) {
     int contador_trames = 0, num_trames = 0;
     char * frame, buffer[240];
 
+    //Mirem quantes trames haurem d'enviar.
     num_trames = p.file_size / 240;
     if (p.file_size % 240 != 0) {
         num_trames++;
     }
 
     while (contador_trames < num_trames) {
+        //Inicialitzem la cadena amb zeros.
         memset(buffer, 0, sizeof(buffer));
+
+        //Llegim 240 bytes de la imatge
         read(p.photo_fd, buffer, 240);
 
+        //Generem el frame a enviar
         frame = FRAME_CONFIG_generateFrame(2);
         ATREIDES_generateFrameSend(frame, 'D', buffer);
 
@@ -629,6 +643,8 @@ void ATREIDES_sendPhoto(Photo p, int user_fd) {
         contador_trames++;
 
         free(frame);
+
+        //Afegim un delay per a que no es saturi res.
         usleep(300);
     }
 
@@ -639,8 +655,8 @@ void ATREIDES_sendPhoto(Photo p, int user_fd) {
 *
 * @Nom: ATREIDES_searchUsers
 * @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Parametres: User u: usuari que demana les dades, int fd: file descriptor de l'usuari que demana les dades
+* @Retorn: trama amb les dades a enviar. 
 *
 ************************************************/
 char * ATREIDES_searchUsers(User u, int fd) {
@@ -648,14 +664,17 @@ char * ATREIDES_searchUsers(User u, int fd) {
     int num_users_pc = 0, i;
     char * res = NULL, * cadena, cadena_print[200];
 
+    //Mirem quants usuaris hi han al codi postal
     for (i = 0; i < num_users; i++) {
         if (strcmp(users[i].postal_code, u.postal_code) == 0) {
             num_users_pc++;
         }
     }
 
+    //Afegim la dada a la trama
     asprintf( & res, "%d", num_users_pc);
 
+    //Imprimim per pantalla
     memset(cadena_print, 0, sizeof(cadena_print));
     sprintf(cadena_print, "Feta la cerca\nHi ha %d persones humanes a %s\n", num_users_pc, u.postal_code);
     write(STDOUT_FILENO, cadena_print, strlen(cadena_print)); 
@@ -668,6 +687,7 @@ char * ATREIDES_searchUsers(User u, int fd) {
             sprintf(cadena_print, "%d %s\n", users[i].id, users[i].username);
             write(STDOUT_FILENO, cadena_print, strlen(cadena_print));
 
+            //Si la propera trama ocuparà més de 240 bytes, enviem la actual i en generem una de nova.
             if (strlen(res) + strlen(users[i].username) + 5 > 240) {
                 char * frame_send;
 
@@ -681,6 +701,8 @@ char * ATREIDES_searchUsers(User u, int fd) {
             }
 
             asprintf( & cadena, "%s*%s*%d", res, users[i].username, users[i].id);
+
+            //Tractament de la cadena per evitar problemes de memòria
             free(res);
             res = strdup(cadena);
             free(cadena);
@@ -693,8 +715,8 @@ char * ATREIDES_searchUsers(User u, int fd) {
 /***********************************************
 *
 * @Nom: ATREIDES_threadClient
-* @Finalitat:
-* @Parametres:
+* @Finalitat: Tractament de les funcionalitats del thread per a cada client connectat
+* @Parametres: void * fdClient: file descriptor obert per al client.
 * @Retorn:
 *
 ************************************************/
@@ -724,6 +746,7 @@ void * ATREIDES_threadClient(void * fdClient) {
 
             i = 0;
             for (i = 0; i < num_users; i++) {
+                //en cas de que trobem l'usuari (ja està creat), assignem el id, file descritor i el thread.
                 if ((strcmp(u.username, users[i].username) == 0) && (strcmp(u.postal_code, users[i].postal_code) == 0)) {
                     u.id = users[i].id;
                     users[i].file_descriptor = fd;
@@ -732,11 +755,12 @@ void * ATREIDES_threadClient(void * fdClient) {
             }
 
             if (u.id == 0) {
-
+                //Revisem que no estiguem intentant escriure diversos usuaris a la vegada i ho bloquegem amb el mutex.
                 pthread_mutex_lock( & lock);
                 num_users++;
                 pthread_mutex_unlock( & lock);
 
+                //Afegim l'usuari.
                 u.id = num_users;
                 ATREIDES_addUser(u);
             }
@@ -778,35 +802,43 @@ void * ATREIDES_threadClient(void * fdClient) {
         case 'F':
             //Cas trama Send
 
+            //Guardem les dades de la imatge
             photo = ATREIDES_receiveSendInfo(frame.data);
+            //Guardem la posició del usuari al array mitjançant el FD.
             u_id = ATREIDES_getUserByFD(fd);
 
             sprintf(cadena, "\nRebut send %s de %s %d\n", photo.file_name, users[u_id].username, users[u_id].id);
             write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
 
+            //Rebem la nova imatge.
             ATREIDES_receivePhoto(photo, fd, u_id);
             break;
 
         case 'P':
             //Cas trama Photo
 
+            //Guardem la posició del usuari al array mitjançant el FD.
             u_id = ATREIDES_getUserByFD(fd);
 
             sprintf(cadena, "\nRebut photo %s de %s %d\n", frame.data, users[u_id].username, users[u_id].id);
             write(STDOUT_FILENO, cadena, sizeof(char) * strlen(cadena));
 
+            //Agafem el file descriptor de la imatge.
             int photo_fd = ATREIDES_checkPhoto(frame.data);
 
+            //Si la foto existeix i està desada al sistema...
             if (photo_fd > 0) {
                 Photo p;
 
                 p.photo_fd = photo_fd;
 
+                //Generem i enviem la les dades de la imatge i enviem la imatge.
                 p = ATREIDES_generatePhotoInfo(p, frame.data, fd);
                 ATREIDES_sendPhoto(p, fd);
 
                 close(photo_fd);
             } else {
+                //Enviem la trama de foto not found.
                 frame_send = FRAME_CONFIG_generateCustomFrame(2, 'F', 2);
                 printF("No hi ha foto registrada.\n");
                 ATREIDES_sendFrame(fd, frame_send);
@@ -818,6 +850,7 @@ void * ATREIDES_threadClient(void * fdClient) {
         case 'Q':
             exit = 1;
 
+            //Rebem les dades de l'usuari.
             u = ATREIDES_receiveUser(frame.data);
 
             sprintf(cadena, "\nRebut Logout de  %s %s \nDesconnectat d'Atreides.\n", u.username, u.postal_code);
@@ -843,9 +876,9 @@ void * ATREIDES_threadClient(void * fdClient) {
 /***********************************************
 *
 * @Nom: ATREIDES_fillConfiguration
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Omplir l'struct de configuracíó d'Atreides
+* @Parametres: char * argv: nom del fitxer de configuració.
+* @Retorn: struct ple amb les dades llegides
 *
 ************************************************/
 ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
@@ -861,11 +894,15 @@ ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
         raise(SIGINT);
 
     } else {
+        //Desem les dades de la ip
         c.ip = IOSCREEN_readUntilIntro(fd, caracter, i);
+
+        //Desem les dades del port
         cadena = IOSCREEN_readUntilIntro(fd, caracter, i);
         c.port = atoi(cadena);
         free(cadena);
 
+        //Tractem la cadena del directori per a treure la barra d'inici
         temp = IOSCREEN_readUntilIntro(fd, caracter, i);
         size = strlen(temp);
 
@@ -887,8 +924,8 @@ ConfigAtreides ATREIDES_fillConfiguration(char * argv) {
 /***********************************************
 *
 * @Nom: ATREIDES_configSocket
-* @Finalitat:
-* @Parametres:
+* @Finalitat: Configurar el socket de connexió del servidor
+* @Parametres: ConfigAtreides config:
 * @Retorn:
 *
 ************************************************/
@@ -897,23 +934,27 @@ int ATREIDES_configSocket(ConfigAtreides config) {
     struct sockaddr_in s_addr;
     int fdSocket = -1;
 
+    //Creem el socket
     fdSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (fdSocket < 0) {
         printF("ERROR durant la creacio del socket\n");
         return -1;
     }
 
+    //Assignem les dades de port i ip
     memset( & s_addr, 0, sizeof(s_addr));
     s_addr.sin_family = AF_INET;
     s_addr.sin_port = htons(config.port);
     s_addr.sin_addr.s_addr = inet_addr(config.ip);
 
+    //Fem el bind al socket.
     if (bind(fdSocket, (void * ) & s_addr, sizeof(s_addr)) < 0) {
         printF("ERROR fent el bind\n");
         return -1;
     }
 
-    listen(fdSocket, 3);
+    //Escoltem connexions de fins a 6 usuaris concurrents.
+    listen(fdSocket, 6);
 
     return fdSocket;
 }
@@ -921,9 +962,7 @@ int ATREIDES_configSocket(ConfigAtreides config) {
 /***********************************************
 *
 * @Nom: Main
-* @Finalitat:
-* @Parametres:
-* @Retorn:
+* @Finalitat: Control del programa
 *
 ************************************************/
 int main(int argc, char ** argv) {
@@ -953,6 +992,7 @@ int main(int argc, char ** argv) {
         raise(SIGINT);
     }
 
+    //Intentem inicialitzar el mutex.
     if (pthread_mutex_init( & lock, NULL) != 0) {
         printF("\nERROR: Init del mutex\n");
         close(socket_fd);
@@ -963,6 +1003,7 @@ int main(int argc, char ** argv) {
         printF("Esperant connexions...\n");
         clientFD = accept(socket_fd, (struct sockaddr * ) NULL, NULL);
 
+        //Creem i llancem la funció del thread.
         pthread_t thrd;
         pthread_create( & thrd, NULL, ATREIDES_threadClient, & clientFD);
     }
