@@ -149,6 +149,12 @@ ConfigFremen FREMEN_fillConfiguration(char * argv) {
             c.directory[i - 1] = temp[i];
         }
 
+        //Mirem si el directori existeix. Si no existeix, el creem.
+        struct stat st = {0};
+        if (stat(c.directory , &st) == -1) {
+            mkdir(c.directory, 0700);
+        }
+
         close(fd);
         free(temp);
     }
